@@ -39,16 +39,44 @@ You create this secret on your local cluster before Flux reconciliation.
 4. SMB CSI driver is installed (`smb.csi.k8s.io`).
 5. NGINX Ingress Controller is installed by Flux from `apps/ingress-nginx`.
 
+## Install and bootstrap Flux
+
+Install Flux CLI:
+
+```bash
+curl -fsSL -o /tmp/install-flux.sh https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh
+echo 'bd7765225b731a1df952456eced0abb5dbbf5e11bc70cf6ab5fddd1476088b7e  /tmp/install-flux.sh' | sha256sum --check
+sudo bash /tmp/install-flux.sh
+```
+
+Bootstrap Flux against this repository (requires `GITHUB_TOKEN` with repo admin permissions):
+
+```bash
+export GITHUB_TOKEN='<your-github-token>'
+flux bootstrap github \
+  --owner=richcorless \
+  --repository=homeserver \
+  --branch=main \
+  --path=clusters/homelab \
+  --personal \
+  --token-auth
+```
+
+After bootstrap, Flux will reconcile this repo path automatically.
+
 ## Install SMB CSI driver on k3s
 
 Install the upstream SMB CSI Helm chart:
 
 ```bash
-helm repo add csi-driver-smb https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
+helm repo add csi-driver-smb https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/release-1.20/charts
 helm repo update
 helm upgrade --install csi-driver-smb csi-driver-smb/csi-driver-smb \
-  --namespace kube-system
+  --namespace kube-system \
+  --version 1.20.1
 ```
+
+If you change SMB CSI chart major/minor versions, update both the chart version and repo URL together.
 
 Confirm the driver is registered:
 
@@ -65,6 +93,25 @@ kubectl create namespace media
 kubectl -n media create secret generic media-smb-credentials \
   --from-literal=username='<your-smb-username>' \
   --from-literal=password='<your-smb-password>'
+```
+
+## One-shot setup script
+
+You can run the included script to install/bootstrap Flux, install SMB CSI, and create/update the SMB secret:
+
+```bash
+export GITHUB_TOKEN='<your-github-token>'
+echo '<your-smb-password>' | \
+bash ./scripts/setup-homelab-prereqs.sh \
+  --github-owner richcorless \
+  --github-repo homeserver \
+  --github-branch main \
+  --flux-path clusters/homelab \
+  --smb-username '<your-smb-username>' \
+  --smb-password-stdin \
+  --media-namespace media \
+  --smb-secret-name media-smb-credentials \
+  --github-personal true
 ```
 
 ## Deploy
