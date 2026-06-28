@@ -34,10 +34,15 @@ spec:
         existingClaim: lyrion-config
         globalMounts:
           - path: /config
-      media:
+      music:
         enabled: true
         type: persistentVolumeClaim
-        existingClaim: media-library
+        existingClaim: music
         globalMounts:
           - path: /music
-            subPath: music
+      music-flac:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: music-flac
+        globalMounts:
+          - path: /music-flac

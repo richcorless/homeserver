@@ -19,7 +19,7 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 
 No username/password is stored in this repository.
 
-The SMB PV references a Kubernetes secret named `media-smb-credentials` in the `media` namespace:
+The SMB PVs reference a Kubernetes secret named `media-smb-credentials` in the `media` namespace:
 
 - `username`
 - `password`
@@ -30,9 +30,32 @@ You create this secret on your local cluster before Flux reconciliation.
 
 1. k3s cluster is running.
 2. Flux is installed and pointed at this repo, path `clusters/homelab`.
-3. SMB CSI driver is installed (`smb.csi.k8s.io`).
-4. The SMB share exists on `10.1.10.10` (configured in `apps/media/storage/media-library-pv.yaml` as `//10.1.10.10/media`).
-5. Create namespace and credentials secret:
+3. SMB shares exist on `10.1.10.10`:
+   - `//10.1.10.10/Audiobooks`
+   - `//10.1.10.10/Music`
+   - `//10.1.10.10/Music_Flac`
+4. SMB CSI driver is installed (`smb.csi.k8s.io`).
+
+## Install SMB CSI driver on k3s
+
+Install the upstream SMB CSI Helm chart:
+
+```bash
+helm repo add csi-driver-smb https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
+helm repo update
+helm upgrade --install csi-driver-smb csi-driver-smb/csi-driver-smb \
+  --namespace kube-system
+```
+
+Confirm the driver is registered:
+
+```bash
+kubectl get csidriver smb.csi.k8s.io
+```
+
+## Create SMB credentials secret in the cluster
+
+Create namespace and credentials secret:
 
 ```bash
 kubectl create namespace media
@@ -57,5 +80,8 @@ flux reconcile kustomization flux-system --with-source
 
 ## Notes
 
-- If your SMB share path is not `//10.1.10.10/media`, update `apps/media/storage/media-library-pv.yaml`.
+- If your SMB share names or server change, update:
+  - `apps/media/storage/audiobooks-pv.yaml`
+  - `apps/media/storage/music-pv.yaml`
+  - `apps/media/storage/music-flac-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
