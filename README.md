@@ -30,7 +30,7 @@ You create this secret on your local cluster before Flux reconciliation.
 
 ## Local server prerequisites
 
-1. k3s cluster is running.
+1. k3s is installed and running (see below).
 2. Flux is installed and pointed at this repo, path `clusters/homelab`.
 3. SMB shares exist on `10.1.10.10`:
    - `//10.1.10.10/Audiobooks`
@@ -38,6 +38,26 @@ You create this secret on your local cluster before Flux reconciliation.
    - `//10.1.10.10/Music Lossless`
 4. SMB CSI driver is installed (`smb.csi.k8s.io`).
 5. NGINX Ingress Controller is installed by Flux from `apps/ingress-nginx`.
+
+## Install k3s
+
+Install k3s on the server using the official quick-start script:
+
+```bash
+curl -sfL https://get.k3s.io | sh -
+```
+
+After installation the kubeconfig is at `/etc/rancher/k3s/k3s.yaml`. Export it for use with `kubectl` and `helm`:
+
+```bash
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+```
+
+Confirm the node is ready:
+
+```bash
+kubectl get nodes
+```
 
 ## Install and bootstrap Flux
 
@@ -97,7 +117,7 @@ kubectl -n media create secret generic media-smb-credentials \
 
 ## One-shot setup script
 
-You can run the included script to install/bootstrap Flux, install SMB CSI, and create/update the SMB secret:
+The included script automates the full setup: installs system prerequisites (curl), installs k3s, bootstraps Flux, installs the SMB CSI driver, and creates the SMB credentials secret.
 
 ```bash
 export GITHUB_TOKEN='<your-github-token>'
@@ -112,6 +132,24 @@ bash ./scripts/setup-homelab-prereqs.sh \
   --media-namespace media \
   --smb-secret-name media-smb-credentials \
   --github-personal true
+```
+
+If k3s is already installed, pass `--skip-k3s` to skip that step:
+
+```bash
+export GITHUB_TOKEN='<your-github-token>'
+echo '<your-smb-password>' | \
+bash ./scripts/setup-homelab-prereqs.sh \
+  --github-owner richcorless \
+  --github-repo homeserver \
+  --github-branch main \
+  --flux-path clusters/homelab \
+  --smb-username '<your-smb-username>' \
+  --smb-password-stdin \
+  --media-namespace media \
+  --smb-secret-name media-smb-credentials \
+  --github-personal true \
+  --skip-k3s
 ```
 
 ## Deploy
