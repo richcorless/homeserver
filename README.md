@@ -15,7 +15,7 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
 - `/apps/ingress-nginx` - ingress controller HelmRelease
-- `/apps` - namespace, storage, app HelmReleases, and shared Ingress
+- `/apps/media` - namespace, storage, app HelmReleases, and shared Ingress
 
 ## How secrets are handled
 
@@ -30,7 +30,7 @@ You create this secret on your local cluster before Flux reconciliation.
 
 ## Local server prerequisites
 
-1. k3s is installed and running (see below).
+1. k3s cluster is running.
 2. Flux is installed and pointed at this repo, path `clusters/homelab`.
 3. SMB shares exist on `10.1.10.10`:
    - `//10.1.10.10/Audiobooks`
@@ -38,26 +38,6 @@ You create this secret on your local cluster before Flux reconciliation.
    - `//10.1.10.10/Music Lossless`
 4. SMB CSI driver is installed (`smb.csi.k8s.io`).
 5. NGINX Ingress Controller is installed by Flux from `apps/ingress-nginx`.
-
-## Install k3s
-
-Install k3s on the server using the official quick-start script:
-
-```bash
-curl -sfL https://get.k3s.io | sh -
-```
-
-After installation the kubeconfig is at `/etc/rancher/k3s/k3s.yaml`. Export it for use with `kubectl` and `helm`:
-
-```bash
-export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-```
-
-Confirm the node is ready:
-
-```bash
-kubectl get nodes
-```
 
 ## Install and bootstrap Flux
 
@@ -117,7 +97,7 @@ kubectl -n media create secret generic media-smb-credentials \
 
 ## One-shot setup script
 
-The included script automates the full setup: installs system prerequisites (curl), installs k3s, bootstraps Flux, installs the SMB CSI driver, and creates the SMB credentials secret.
+You can run the included script to install/bootstrap Flux, install SMB CSI, and create/update the SMB secret:
 
 ```bash
 export GITHUB_TOKEN='<your-github-token>'
@@ -132,24 +112,6 @@ bash ./scripts/setup-homelab-prereqs.sh \
   --media-namespace media \
   --smb-secret-name media-smb-credentials \
   --github-personal true
-```
-
-If k3s is already installed, pass `--skip-k3s` to skip that step:
-
-```bash
-export GITHUB_TOKEN='<your-github-token>'
-echo '<your-smb-password>' | \
-bash ./scripts/setup-homelab-prereqs.sh \
-  --github-owner richcorless \
-  --github-repo homeserver \
-  --github-branch main \
-  --flux-path clusters/homelab \
-  --smb-username '<your-smb-username>' \
-  --smb-password-stdin \
-  --media-namespace media \
-  --smb-secret-name media-smb-credentials \
-  --github-personal true \
-  --skip-k3s
 ```
 
 ## Deploy
@@ -175,19 +137,19 @@ With ingress-nginx running, use:
 - `http://<server>/audiobookshelf`
 - `http://<server>/lms`
 
-These paths are configured in `apps/ingress.yaml` and rewritten to each app root path.
+These paths are configured in `apps/media/ingress.yaml` and rewritten to each app root path.
 
 ## Future HTTPS and SSO
 
 The single ingress model is set up so HTTPS and SSO can be added centrally later:
 
-- add `spec.tls` to `apps/ingress.yaml` and issue certificates (for example with cert-manager)
-- add nginx auth annotations in `apps/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
+- add `spec.tls` to `apps/media/ingress.yaml` and issue certificates (for example with cert-manager)
+- add nginx auth annotations in `apps/media/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
 
 ## Notes
 
 - If your SMB share names or server change, update:
-  - `apps/storage/audiobooks-pv.yaml`
-  - `apps/storage/music-pv.yaml`
-  - `apps/storage/music-lossless-pv.yaml`
+  - `apps/media/storage/audiobooks-pv.yaml`
+  - `apps/media/storage/music-pv.yaml`
+  - `apps/media/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
