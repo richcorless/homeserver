@@ -5,7 +5,7 @@ resources:
   - audiobooks-pvc.yaml
   - music-pv.yaml
   - music-pvc.yaml
-  - music-flac-pv.yaml
-  - music-flac-pvc.yaml
+  - music-lossless-pv.yaml
+  - music-lossless-pvc.yaml
   - audiobookshelf-config-pvc.yaml
   - lyrion-config-pvc.yaml

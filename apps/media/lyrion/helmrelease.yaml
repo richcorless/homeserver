@@ -40,9 +40,9 @@ spec:
         existingClaim: music
         globalMounts:
           - path: /music
-      music-flac:
+      music-lossless:
         enabled: true
         type: persistentVolumeClaim
-        existingClaim: music-flac
+        existingClaim: music-lossless
         globalMounts:
-          - path: /music-flac
+          - path: /music-lossless

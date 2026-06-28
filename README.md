@@ -35,7 +35,7 @@ You create this secret on your local cluster before Flux reconciliation.
 3. SMB shares exist on `10.1.10.10`:
    - `//10.1.10.10/Audiobooks`
    - `//10.1.10.10/Music`
-   - `//10.1.10.10/Music_Flac`
+   - `//10.1.10.10/Music Lossless`
 4. SMB CSI driver is installed (`smb.csi.k8s.io`).
 5. NGINX Ingress Controller is installed by Flux from `apps/ingress-nginx`.
 
@@ -151,5 +151,5 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
 - If your SMB share names or server change, update:
   - `apps/media/storage/audiobooks-pv.yaml`
   - `apps/media/storage/music-pv.yaml`
-  - `apps/media/storage/music-flac-pv.yaml`
+  - `apps/media/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
