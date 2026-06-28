@@ -4,6 +4,7 @@ GitOps repository for deploying services to a k3s cluster with Flux and Helm.
 
 ## What is deployed
 
+- ingress-nginx (single cluster ingress/reverse proxy)
 - Audiobookshelf
 - Lyrion Music Server
 
@@ -13,7 +14,8 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
-- `/apps/media` - namespace, storage, and app HelmReleases
+- `/apps/ingress-nginx` - ingress controller HelmRelease
+- `/apps/media` - namespace, storage, app HelmReleases, and shared Ingress
 
 ## How secrets are handled
 
@@ -35,6 +37,7 @@ You create this secret on your local cluster before Flux reconciliation.
    - `//10.1.10.10/Music`
    - `//10.1.10.10/Music_Flac`
 4. SMB CSI driver is installed (`smb.csi.k8s.io`).
+5. NGINX Ingress Controller is installed by Flux from `apps/ingress-nginx`.
 
 ## Install SMB CSI driver on k3s
 
@@ -68,15 +71,33 @@ kubectl -n media create secret generic media-smb-credentials \
 
 Once Flux is connected to this repository and the secret exists, Flux will reconcile:
 
+- ingress-nginx controller
 - namespace + PV/PVCs
 - Audiobookshelf HelmRelease
 - Lyrion HelmRelease
+- media path-based Ingress
 
 You can force reconciliation with:
 
 ```bash
 flux reconcile kustomization flux-system --with-source
 ```
+
+## Access services through nginx ingress
+
+With ingress-nginx running, use:
+
+- `http://<server>/audiobookshelf`
+- `http://<server>/lms`
+
+These paths are configured in `apps/media/ingress.yaml` and rewritten to each app root path.
+
+## Future HTTPS and SSO
+
+The single ingress model is set up so HTTPS and SSO can be added centrally later:
+
+- add `spec.tls` to `apps/media/ingress.yaml` and issue certificates (for example with cert-manager)
+- add nginx auth annotations in `apps/media/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
 
 ## Notes
 
