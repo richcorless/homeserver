@@ -115,22 +115,16 @@ echo "Checking/installing system prerequisites..."
 MISSING_PKGS=()
 for pkg_cmd in curl sha256sum; do
   if ! command -v "${pkg_cmd}" >/dev/null 2>&1; then
-    MISSING_PKGS+=("${pkg_cmd}")
+    case "${pkg_cmd}" in
+      sha256sum) MISSING_PKGS+=("coreutils") ;;
+      *) MISSING_PKGS+=("${pkg_cmd}") ;;
+    esac
   fi
 done
 
 if [[ ${#MISSING_PKGS[@]} -gt 0 ]]; then
   echo "Installing missing tools: ${MISSING_PKGS[*]}"
-  # Both curl and sha256sum ship in well-known packages across distros.
-  # coreutils provides sha256sum; curl is its own package.
-  PKG_LIST=()
-  for pkg in "${MISSING_PKGS[@]}"; do
-    case "${pkg}" in
-      sha256sum) PKG_LIST+=("coreutils") ;;
-      *) PKG_LIST+=("${pkg}") ;;
-    esac
-  done
-  _install_pkg "${PKG_LIST[@]}"
+  _install_pkg "${MISSING_PKGS[@]}"
 fi
 
 # ---------------------------------------------------------------------------
@@ -143,20 +137,18 @@ elif command -v k3s >/dev/null 2>&1; then
 else
   echo "Installing k3s..."
   curl -sfL https://get.k3s.io | sh -
-  # k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml.
-  # Export it so subsequent kubectl/helm calls work without a separate kubeconfig.
-  export KUBECONFIG="${KUBECONFIG:-/etc/rancher/k3s/k3s.yaml}"
 fi
 
-# If k3s is the kubectl provider, export KUBECONFIG so helm/flux can reach it.
+# k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml.
+# Export it so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
 if [[ -z "${KUBECONFIG:-}" && -f /etc/rancher/k3s/k3s.yaml ]]; then
   export KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
 fi
 
 # ---------------------------------------------------------------------------
-# Step 3: Verify remaining prerequisites
+# Step 3: Verify remaining prerequisites (helm; kubectl is provided by k3s)
 # ---------------------------------------------------------------------------
-for cmd in curl kubectl helm sha256sum; do
+for cmd in kubectl helm; do
   if ! command -v "${cmd}" >/dev/null 2>&1; then
     echo "Missing required command: ${cmd}" >&2
     exit 1
