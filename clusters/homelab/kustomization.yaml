@@ -3,4 +3,4 @@ kind: Kustomization
 resources:
   - ../../infrastructure/sources
   - ../../apps/ingress-nginx
-  - ../../apps/media
+  - ../../apps

@@ -15,7 +15,7 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
 - `/apps/ingress-nginx` - ingress controller HelmRelease
-- `/apps/media` - namespace, storage, app HelmReleases, and shared Ingress
+- `/apps` - namespace, storage, app HelmReleases, and shared Ingress
 
 ## How secrets are handled
 
@@ -137,19 +137,19 @@ With ingress-nginx running, use:
 - `http://<server>/audiobookshelf`
 - `http://<server>/lms`
 
-These paths are configured in `apps/media/ingress.yaml` and rewritten to each app root path.
+These paths are configured in `apps/ingress.yaml` and rewritten to each app root path.
 
 ## Future HTTPS and SSO
 
 The single ingress model is set up so HTTPS and SSO can be added centrally later:
 
-- add `spec.tls` to `apps/media/ingress.yaml` and issue certificates (for example with cert-manager)
-- add nginx auth annotations in `apps/media/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
+- add `spec.tls` to `apps/ingress.yaml` and issue certificates (for example with cert-manager)
+- add nginx auth annotations in `apps/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
 
 ## Notes
 
 - If your SMB share names or server change, update:
-  - `apps/media/storage/audiobooks-pv.yaml`
-  - `apps/media/storage/music-pv.yaml`
-  - `apps/media/storage/music-lossless-pv.yaml`
+  - `apps/storage/audiobooks-pv.yaml`
+  - `apps/storage/music-pv.yaml`
+  - `apps/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
