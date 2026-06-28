@@ -1,0 +1,43 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: lyrion
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: app-template
+      version: 4.4.0
+      sourceRef:
+        kind: HelmRepository
+        name: bjw-s
+        namespace: flux-system
+  values:
+    controllers:
+      main:
+        containers:
+          main:
+            image:
+              repository: lmscommunity/lyrionmusicserver
+              tag: stable
+    service:
+      main:
+        controller: main
+        ports:
+          http:
+            port: 9000
+            targetPort: 9000
+    persistence:
+      config:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: lyrion-config
+        globalMounts:
+          - path: /config
+      media:
+        enabled: true
+        type: persistentVolumeClaim
+        existingClaim: media-library
+        globalMounts:
+          - path: /music
+            subPath: music
