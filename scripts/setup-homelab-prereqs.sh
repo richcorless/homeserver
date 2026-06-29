@@ -41,6 +41,8 @@ SMB_CSI_CHART_VERSION="1.20.1"
 SMB_CSI_HELM_REPO_URL="https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/release-1.20/charts"
 FLUX_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh"
 FLUX_INSTALL_SCRIPT_SHA256="bd7765225b731a1df952456eced0abb5dbbf5e11bc70cf6ab5fddd1476088b7e"
+HELM_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/helm/helm/v3.17.3/scripts/get-helm-3"
+HELM_INSTALL_SCRIPT_SHA256="4a01413bf2a767ae744b8bbe4485cd83654d9a0a769c92377afc36328d5a007a"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -146,14 +148,35 @@ if [[ -z "${KUBECONFIG:-}" && -f /etc/rancher/k3s/k3s.yaml ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Step 3: Verify remaining prerequisites (helm; kubectl is provided by k3s)
+# Step 3: Install Helm (if not already present) and verify kubectl
 # ---------------------------------------------------------------------------
-for cmd in kubectl helm; do
-  if ! command -v "${cmd}" >/dev/null 2>&1; then
-    echo "Missing required command: ${cmd}" >&2
+if command -v helm >/dev/null 2>&1; then
+  echo "Helm is already installed ($(helm version --short 2>/dev/null)), skipping."
+else
+  echo "Installing Helm..."
+  HELM_INSTALL_SCRIPT="$(mktemp)"
+  curl -fsSL -o "${HELM_INSTALL_SCRIPT}" "${HELM_INSTALL_SCRIPT_URL}"
+  if ! echo "${HELM_INSTALL_SCRIPT_SHA256}  ${HELM_INSTALL_SCRIPT}" | sha256sum --check --status; then
+    echo "Helm installer checksum verification failed." >&2
+    rm -f "${HELM_INSTALL_SCRIPT}"
     exit 1
   fi
-done
+  if [[ -w /usr/local/bin ]]; then
+    bash "${HELM_INSTALL_SCRIPT}"
+  elif command -v sudo >/dev/null 2>&1; then
+    sudo bash "${HELM_INSTALL_SCRIPT}"
+  else
+    mkdir -p "${HOME}/.local/bin"
+    USE_SUDO=false HELM_INSTALL_DIR="${HOME}/.local/bin" bash "${HELM_INSTALL_SCRIPT}"
+    export PATH="${HOME}/.local/bin:${PATH}"
+  fi
+  rm -f "${HELM_INSTALL_SCRIPT}"
+fi
+
+if ! command -v kubectl >/dev/null 2>&1; then
+  echo "Missing required command: kubectl" >&2
+  exit 1
+fi
 
 # ---------------------------------------------------------------------------
 # Step 4: Install Flux CLI
