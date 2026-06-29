@@ -151,6 +151,7 @@ if [[ -z "${KUBECONFIG:-}" ]]; then
   else
     echo "No readable kubeconfig found. To fix, do one of the following:" >&2
     echo "  1. Copy the k3s kubeconfig to your home directory:" >&2
+    echo "       mkdir -p ~/.kube" >&2
     echo "       sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config" >&2
     echo "       sudo chown \"\$USER\":\"\$USER\" ~/.kube/config && chmod 600 ~/.kube/config" >&2
     echo "  2. Set KUBECONFIG to a readable kubeconfig file and rerun." >&2
