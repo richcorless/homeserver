@@ -40,26 +40,17 @@ The following must be in place before running the setup script. They cannot be a
 3. **A GitHub personal access token** (`GITHUB_TOKEN`) with repo admin permissions, used by Flux bootstrap.
 4. **SMB credentials** (username and password) for the shares above.
 
-> **kubeconfig note:** k3s writes `/etc/rancher/k3s/k3s.yaml` as root-only (mode 600). Copy it to your
-> user account before running the script so that `kubectl`, `helm`, and `flux` can reach the cluster:
-> ```bash
-> mkdir -p ~/.kube
-> sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-> sudo chown "$USER":"$USER" ~/.kube/config
-> chmod 600 ~/.kube/config
-> ```
-
 ## Setup (recommended: one-shot script)
 
 `scripts/setup-homelab-prereqs.sh` handles the full cluster bootstrap in one command. It:
 
 1. Installs OS prerequisites (`curl`, `sha256sum`/`coreutils`) if missing.
 2. Installs k3s unless `--skip-k3s` is passed or k3s is already present.
-3. Configures `KUBECONFIG` (prefers `~/.kube/config`, falls back to `/etc/rancher/k3s/k3s.yaml` if readable).
+3. Configures `KUBECONFIG` by exporting `/etc/rancher/k3s/k3s.yaml` if not already set.
 4. Installs Helm if missing (checksum-verified).
 5. Verifies `kubectl` is available.
 6. Installs the Flux CLI if missing (checksum-verified).
-7. Bootstraps Flux to this repository at `clusters/homelab` on branch `main`.
+7. Bootstraps Flux with `source-controller` and `kustomize-controller` components to this repository at `clusters/homelab` on branch `main`.
 8. Installs the SMB CSI driver Helm chart (v1.20.1) into `kube-system`.
 9. Creates the `media` namespace and the `media-smb-credentials` secret.
 
