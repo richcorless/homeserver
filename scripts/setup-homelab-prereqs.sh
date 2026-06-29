@@ -141,10 +141,11 @@ else
   curl -sfL https://get.k3s.io | sh -
 fi
 
-# k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml.
-# Export it so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
-if [[ -z "${KUBECONFIG:-}" && -f /etc/rancher/k3s/k3s.yaml ]]; then
-  export KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
+# k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml (owned by root, mode 600).
+# Export it inline so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
+# Note: Non-root users may need to copy the file to ~/.kube/config with appropriate ownership.
+if [[ -z "${KUBECONFIG:-}" ]]; then
+  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 fi
 
 # ---------------------------------------------------------------------------
@@ -206,12 +207,17 @@ fi
 # Step 5: Bootstrap Flux
 # ---------------------------------------------------------------------------
 echo "Bootstrapping Flux..."
+# Install core Flux components:
+# - source-controller: manages Git, Helm, and Bucket sources
+# - kustomize-controller: applies Kustomizations from sources
+# - helm-controller: required for HelmRelease resources used in this repo
 FLUX_BOOTSTRAP_ARGS=(
   --owner="${GITHUB_OWNER}"
   --repository="${GITHUB_REPO}"
   --branch="${GITHUB_BRANCH}"
   --path="${FLUX_PATH}"
   --token-auth
+  --components="source-controller,kustomize-controller,helm-controller"
 )
 
 if [[ "${GITHUB_PERSONAL}" == "true" ]]; then
