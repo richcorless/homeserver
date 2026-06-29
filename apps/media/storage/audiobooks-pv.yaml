@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: audiobooks
+spec:
+  capacity:
+    storage: 2Ti
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: media-smb
+  csi:
+    driver: smb.csi.k8s.io
+    volumeHandle: audiobooks-10-1-10-10
+    volumeAttributes:
+      source: //10.1.10.10/Audiobooks
+    nodeStageSecretRef:
+      name: media-smb-credentials
+      namespace: media
+  mountOptions:
+    - dir_mode=0775
+    - file_mode=0664
+    - uid=1000
+    - gid=1000
