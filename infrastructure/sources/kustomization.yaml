@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - helmrepository-bjw-s.yaml
   - helmrepository-ingress-nginx.yaml
+  - helmrepository-smb-csi.yaml
