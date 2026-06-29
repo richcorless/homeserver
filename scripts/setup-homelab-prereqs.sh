@@ -141,10 +141,23 @@ else
   curl -sfL https://get.k3s.io | sh -
 fi
 
-# k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml.
-# Export it so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
-if [[ -z "${KUBECONFIG:-}" && -f /etc/rancher/k3s/k3s.yaml ]]; then
-  export KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
+# k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml (owned by root, mode 600).
+# Prefer a user-readable copy in ~/.kube/config, fall back to the k3s path if readable,
+# and fail clearly if neither is accessible.
+if [[ -z "${KUBECONFIG:-}" ]]; then
+  if [[ -r "${HOME}/.kube/config" ]]; then
+    export KUBECONFIG="${HOME}/.kube/config"
+  elif [[ -r /etc/rancher/k3s/k3s.yaml ]]; then
+    export KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
+  elif [[ -f /etc/rancher/k3s/k3s.yaml ]]; then
+    echo "Cannot read /etc/rancher/k3s/k3s.yaml (permission denied)." >&2
+    echo "Copy it to ~/.kube/config first:" >&2
+    echo "  mkdir -p ~/.kube" >&2
+    echo "  sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config" >&2
+    echo "  sudo chown \"\$USER\":\"\$USER\" ~/.kube/config" >&2
+    echo "  chmod 600 ~/.kube/config" >&2
+    exit 1
+  fi
 fi
 
 # ---------------------------------------------------------------------------

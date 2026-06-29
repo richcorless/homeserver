@@ -26,78 +26,42 @@ The SMB PVs reference a Kubernetes secret named `media-smb-credentials` in the `
 - `username`
 - `password`
 
-You create this secret on your local cluster before Flux reconciliation.
+This secret is created by the setup script (or manually, see below) before Flux reconciliation begins.
 
-## Local server prerequisites
+## Prerequisites
 
-1. k3s cluster is running.
-2. Flux is installed and pointed at this repo, path `clusters/homelab`.
-3. SMB shares exist on `10.1.10.10`:
+The following must be in place before running the setup script. They cannot be automated:
+
+1. **A Linux server** with `sudo` access where k3s will run (or already running).
+2. **SMB shares** reachable from the server:
    - `//10.1.10.10/Audiobooks`
    - `//10.1.10.10/Music`
    - `//10.1.10.10/Music Lossless`
-4. SMB CSI driver is installed (`smb.csi.k8s.io`).
-5. NGINX Ingress Controller is installed by Flux from `apps/ingress-nginx`.
+3. **A GitHub personal access token** (`GITHUB_TOKEN`) with repo admin permissions, used by Flux bootstrap.
+4. **SMB credentials** (username and password) for the shares above.
 
-## Install and bootstrap Flux
+> **kubeconfig note:** k3s writes `/etc/rancher/k3s/k3s.yaml` as root-only (mode 600). Copy it to your
+> user account before running the script so that `kubectl`, `helm`, and `flux` can reach the cluster:
+> ```bash
+> mkdir -p ~/.kube
+> sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
+> sudo chown "$USER":"$USER" ~/.kube/config
+> chmod 600 ~/.kube/config
+> ```
 
-Install Flux CLI:
+## Setup (recommended: one-shot script)
 
-```bash
-curl -fsSL -o /tmp/install-flux.sh https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh
-echo 'bd7765225b731a1df952456eced0abb5dbbf5e11bc70cf6ab5fddd1476088b7e  /tmp/install-flux.sh' | sha256sum --check
-sudo bash /tmp/install-flux.sh
-```
+`scripts/setup-homelab-prereqs.sh` handles the full cluster bootstrap in one command. It:
 
-Bootstrap Flux against this repository (requires `GITHUB_TOKEN` with repo admin permissions):
-
-```bash
-export GITHUB_TOKEN='<your-github-token>'
-flux bootstrap github \
-  --owner=richcorless \
-  --repository=homeserver \
-  --branch=main \
-  --path=clusters/homelab \
-  --personal \
-  --token-auth
-```
-
-After bootstrap, Flux will reconcile this repo path automatically.
-
-## Install SMB CSI driver on k3s
-
-Install the upstream SMB CSI Helm chart:
-
-```bash
-helm repo add csi-driver-smb https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/release-1.20/charts
-helm repo update
-helm upgrade --install csi-driver-smb csi-driver-smb/csi-driver-smb \
-  --namespace kube-system \
-  --version 1.20.1
-```
-
-If you change SMB CSI chart major/minor versions, update both the chart version and repo URL together.
-
-Confirm the driver is registered:
-
-```bash
-kubectl get csidriver smb.csi.k8s.io
-```
-
-## Create SMB credentials secret in the cluster
-
-Create namespace and credentials secret:
-
-```bash
-kubectl create namespace media
-kubectl -n media create secret generic media-smb-credentials \
-  --from-literal=username='<your-smb-username>' \
-  --from-literal=password='<your-smb-password>'
-```
-
-## One-shot setup script
-
-You can run the included script to install/bootstrap Flux, install SMB CSI, and create/update the SMB secret:
+1. Installs OS prerequisites (`curl`, `sha256sum`/`coreutils`) if missing.
+2. Installs k3s unless `--skip-k3s` is passed or k3s is already present.
+3. Configures `KUBECONFIG` (prefers `~/.kube/config`, falls back to `/etc/rancher/k3s/k3s.yaml` if readable).
+4. Installs Helm if missing (checksum-verified).
+5. Verifies `kubectl` is available.
+6. Installs the Flux CLI if missing (checksum-verified).
+7. Bootstraps Flux to this repository at `clusters/homelab` on branch `main`.
+8. Installs the SMB CSI driver Helm chart (v1.20.1) into `kube-system`.
+9. Creates the `media` namespace and the `media-smb-credentials` secret.
 
 ```bash
 export GITHUB_TOKEN='<your-github-token>'
@@ -112,6 +76,62 @@ bash ./scripts/setup-homelab-prereqs.sh \
   --media-namespace media \
   --smb-secret-name media-smb-credentials \
   --github-personal true
+```
+
+Pass `--skip-k3s` if k3s is already installed.
+
+## Manual setup (alternative)
+
+If you prefer to set up each component individually instead of using the script:
+
+### Install Helm
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+```
+
+### Install and bootstrap Flux CLI
+
+```bash
+curl -fsSL -o /tmp/install-flux.sh https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh
+echo 'bd7765225b731a1df952456eced0abb5dbbf5e11bc70cf6ab5fddd1476088b7e  /tmp/install-flux.sh' | sha256sum --check
+sudo bash /tmp/install-flux.sh
+
+export GITHUB_TOKEN='<your-github-token>'
+flux bootstrap github \
+  --owner=richcorless \
+  --repository=homeserver \
+  --branch=main \
+  --path=clusters/homelab \
+  --personal \
+  --token-auth
+```
+
+### Install SMB CSI driver
+
+```bash
+helm repo add csi-driver-smb https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/release-1.20/charts
+helm repo update
+helm upgrade --install csi-driver-smb csi-driver-smb/csi-driver-smb \
+  --namespace kube-system \
+  --version 1.20.1
+```
+
+Confirm the driver is registered:
+
+```bash
+kubectl get csidriver smb.csi.k8s.io
+```
+
+> If you change the SMB CSI chart major/minor version, update both the chart version and the repo URL together.
+
+### Create SMB credentials secret
+
+```bash
+kubectl create namespace media
+kubectl -n media create secret generic media-smb-credentials \
+  --from-literal=username='<your-smb-username>' \
+  --from-literal=password='<your-smb-password>'
 ```
 
 ## Deploy
