@@ -50,7 +50,7 @@ The following must be in place before running the setup script. They cannot be a
 4. Installs Helm if missing (checksum-verified).
 5. Verifies `kubectl` is available.
 6. Installs the Flux CLI if missing (checksum-verified).
-7. Bootstraps Flux with `source-controller` and `kustomize-controller` components to this repository at `clusters/homelab` on branch `main`.
+7. Bootstraps Flux with `source-controller`, `kustomize-controller`, and `helm-controller` components to this repository at `clusters/homelab` on branch `main`.
 8. Installs the SMB CSI driver Helm chart (v1.20.1) into `kube-system`.
 9. Creates the `media` namespace and the `media-smb-credentials` secret.
 
