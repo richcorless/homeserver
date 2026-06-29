@@ -142,9 +142,21 @@ else
 fi
 
 # k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml.
-# Export it so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
-if [[ -z "${KUBECONFIG:-}" && -f /etc/rancher/k3s/k3s.yaml ]]; then
-  export KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
+# Export a readable kubeconfig so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
+if [[ -z "${KUBECONFIG:-}" ]]; then
+  if [[ -r /etc/rancher/k3s/k3s.yaml ]]; then
+    export KUBECONFIG="/etc/rancher/k3s/k3s.yaml"
+  elif [[ -r "${HOME}/.kube/config" ]]; then
+    export KUBECONFIG="${HOME}/.kube/config"
+  else
+    echo "No readable kubeconfig found. To fix, do one of the following:" >&2
+    echo "  1. Copy the k3s kubeconfig to your home directory:" >&2
+    echo "       sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config" >&2
+    echo "       sudo chown \"\$USER\":\"\$USER\" ~/.kube/config && chmod 600 ~/.kube/config" >&2
+    echo "  2. Set KUBECONFIG to a readable kubeconfig file and rerun." >&2
+    echo "  3. Rerun this script with elevated privileges (e.g. sudo -E)." >&2
+    exit 1
+  fi
 fi
 
 # ---------------------------------------------------------------------------
