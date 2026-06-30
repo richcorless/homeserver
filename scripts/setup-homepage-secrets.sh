@@ -65,9 +65,17 @@ if ! command -v kubectl >/dev/null 2>&1; then
   exit 1
 fi
 
-kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${HOMEPAGE_SECRET_NAME}" \
+if ! kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${HOMEPAGE_SECRET_NAME}" \
   --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY="${AUDIOBOOKSHELF_API_KEY}" \
-  --dry-run=client -o yaml | kubectl apply -f -
+  --dry-run=client -o yaml | kubectl apply -f -; then
+  echo "Failed to create or update Homepage secret in namespace ${MEDIA_NAMESPACE}." >&2
+  exit 1
+fi
+
+if ! kubectl -n "${MEDIA_NAMESPACE}" get deployment "${HOMEPAGE_DEPLOYMENT_NAME}" >/dev/null 2>&1; then
+  echo "Homepage deployment not found. Ensure Flux has reconciled Homepage before running this script." >&2
+  exit 1
+fi
 
 kubectl -n "${MEDIA_NAMESPACE}" rollout restart "deployment/${HOMEPAGE_DEPLOYMENT_NAME}"
 kubectl -n "${MEDIA_NAMESPACE}" rollout status "deployment/${HOMEPAGE_DEPLOYMENT_NAME}"
