@@ -10,5 +10,5 @@ spec:
     - match: PathPrefix(`/`)
       kind: Rule
       services:
-        - name: lyrion
+        - name: lyrion-main
           port: 9000

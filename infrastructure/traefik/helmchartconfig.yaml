@@ -5,6 +5,8 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
+    image:
+      tag: v3.7.6
     ports:
       web:
         forwardedHeaders:

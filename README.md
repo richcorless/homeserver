@@ -15,7 +15,7 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
-- `/infrastructure/traefik` - Traefik `HelmChartConfig` adding the LMS-specific port-9000 entrypoint
+- `/infrastructure/traefik` - Traefik `HelmChartConfig` pinning Traefik and adding the LMS-specific port-9000 entrypoint
 - `/apps/media` - namespace, storage, app manifests, HelmReleases, Traefik Middleware, Ingress, and IngressRoute resources
 
 ## How secrets are handled
@@ -169,7 +169,7 @@ k3s ships with Traefik as its built-in ingress controller. No extra deployment i
 http://homeserver.local/
 ```
 
-Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS. The default bookmark still uses `homeserver.local`, but the ingress no longer restricts the host header so requests from the trusted local subnet can also use the server IP.
+Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS. Homepage validates the `Host` header against the exact entries in `HOMEPAGE_ALLOWED_HOSTS`, so any additional hostname or IP you want to use must be added explicitly in `apps/media/homepage/deployment.yaml`.
 
 ### Audiobookshelf
 
@@ -185,7 +185,7 @@ Configured in `apps/media/ingress.yaml`. The `strip-audiobookshelf` Middleware r
 http://homeserver.local:9000
 ```
 
-LMS does not support being served from a subfolder — it generates root-relative redirect URLs (e.g. `/settings/server/wizard.html`) that a subpath proxy cannot transparently rewrite. Instead, Traefik is configured with a dedicated entrypoint on port 9000 (via `infrastructure/traefik/helmchartconfig.yaml`) and an `IngressRoute` (in `apps/media/lyrion/ingressroute.yaml`) that routes all traffic on that port directly to the lyrion service at `/`. This means all internal LMS redirects resolve correctly.
+LMS does not support being served from a subfolder — it generates root-relative redirect URLs (e.g. `/settings/server/wizard.html`) that a subpath proxy cannot transparently rewrite. Instead, Traefik is configured with a dedicated entrypoint on port 9000 (via `infrastructure/traefik/helmchartconfig.yaml`) and an `IngressRoute` (in `apps/media/lyrion/ingressroute.yaml`) that routes all traffic on that port directly to the `lyrion-main` service at `/`. This means all internal LMS redirects resolve correctly.
 
 Homepage now serves `/` on port 80, while LMS remains available directly on port 9000.
 
@@ -207,4 +207,4 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)
 - Keep the `$(MY_POD_IP):3000` entry in `apps/media/homepage/deployment.yaml` so Kubernetes health checks can reach Homepage on the pod IP.
-- If you want Homepage to accept local subnet access, add the subnet/IP entries to `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`), remove any hostname-only restriction from `apps/media/homepage/ingress.yaml`, and ensure Traefik trusts that subnet in `infrastructure/traefik/helmchartconfig.yaml` (`forwardedHeaders.trustedIPs`).
+- Homepage matches `HOMEPAGE_ALLOWED_HOSTS` exactly; CIDR ranges are not supported. Add each allowed hostname or IP explicitly in `apps/media/homepage/deployment.yaml`, and keep Traefik `forwardedHeaders.trustedIPs` aligned with the networks that may send forwarded headers.
