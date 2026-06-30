@@ -7,6 +7,7 @@ Usage:
   setup-homepage-secrets.sh \
     [--audiobookshelf-api-key <key>] \
     [--audiobookshelf-api-key-stdin] \
+    [--stdin-timeout-seconds <seconds>] \
     [--media-namespace <namespace>] \
     [--homepage-secret-name <secret>] \
     [--homepage-deployment-name <deployment>]
@@ -20,11 +21,13 @@ HOMEPAGE_SECRET_NAME="homepage-secrets"
 HOMEPAGE_DEPLOYMENT_NAME="homepage"
 AUDIOBOOKSHELF_API_KEY=""
 AUDIOBOOKSHELF_API_KEY_STDIN="false"
+STDIN_TIMEOUT_SECONDS="60"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --audiobookshelf-api-key) AUDIOBOOKSHELF_API_KEY="${2:-}"; shift 2 ;;
     --audiobookshelf-api-key-stdin) AUDIOBOOKSHELF_API_KEY_STDIN="true"; shift 1 ;;
+    --stdin-timeout-seconds) STDIN_TIMEOUT_SECONDS="${2:-}"; shift 2 ;;
     --media-namespace) MEDIA_NAMESPACE="${2:-}"; shift 2 ;;
     --homepage-secret-name) HOMEPAGE_SECRET_NAME="${2:-}"; shift 2 ;;
     --homepage-deployment-name) HOMEPAGE_DEPLOYMENT_NAME="${2:-}"; shift 2 ;;
@@ -38,7 +41,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "${AUDIOBOOKSHELF_API_KEY_STDIN}" == "true" ]]; then
-  if ! IFS= read -r -s -t 30 AUDIOBOOKSHELF_API_KEY; then
+  if ! IFS= read -r -s -t "${STDIN_TIMEOUT_SECONDS}" AUDIOBOOKSHELF_API_KEY; then
     echo "Timed out waiting for Audiobookshelf API key on stdin." >&2
     exit 1
   fi
