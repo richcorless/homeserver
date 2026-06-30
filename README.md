@@ -33,7 +33,7 @@ Homepage references a Kubernetes secret named `homepage-secrets` in the `media` 
 
 This key should contain an Audiobookshelf admin API token. You can find it in the Audiobookshelf web UI under **Settings → Users → your account** after the initial admin account is created.
 
-These secrets are created by the setup script (or manually, see below) before or after Flux reconciliation begins.
+The SMB secret is created during bootstrap. The Homepage secret is populated separately after Audiobookshelf is deployed, because the API token does not exist until after the first admin login.
 
 ## Prerequisites
 
@@ -46,11 +46,11 @@ The following must be in place before running the setup script. They cannot be a
    - `//10.1.10.10/Music Lossless`
 3. **A GitHub personal access token** (`GITHUB_TOKEN`) with repo admin permissions, used by Flux bootstrap.
 4. **SMB credentials** (username and password) for the shares above.
-5. **Audiobookshelf API key** for Homepage's Audiobookshelf widget. This is optional for the first bootstrap run, but required if you want the widget populated once Homepage is up.
+5. **Audiobookshelf API key** for Homepage's Audiobookshelf widget. This is created in Audiobookshelf after the first admin login, so it is configured in a second step after deployment.
 
-## Setup (recommended: one-shot script)
+## Setup (recommended: bootstrap, then configure Homepage secret)
 
-`scripts/setup-homelab-prereqs.sh` handles the full cluster bootstrap in one command. It:
+`scripts/setup-homelab-prereqs.sh` handles the cluster bootstrap in one command. It:
 
 1. Installs OS prerequisites (`curl`, `sha256sum`/`coreutils`) if missing.
 2. Installs k3s unless `--skip-k3s` is passed or k3s is already present.
@@ -59,7 +59,7 @@ The following must be in place before running the setup script. They cannot be a
 5. Verifies `kubectl` is available.
 6. Installs the Flux CLI if missing (checksum-verified).
 7. Bootstraps Flux with `source-controller`, `kustomize-controller`, and `helm-controller` components to this repository at `clusters/homelab` on branch `main`.
-8. Creates the `media` namespace, the `media-smb-credentials` secret, and the `homepage-secrets` secret.
+8. Creates the `media` namespace and the `media-smb-credentials` secret.
 
 > The SMB CSI driver (v1.20.1) is deployed by Flux from `infrastructure/smb-csi/`.
 
@@ -72,17 +72,23 @@ bash ./scripts/setup-homelab-prereqs.sh \
   --github-branch main \
   --flux-path clusters/homelab \
   --smb-username '<your-smb-username>' \
-  --audiobookshelf-api-key '<your-audiobookshelf-api-key>' \
   --smb-password-stdin \
   --media-namespace media \
   --smb-secret-name media-smb-credentials \
-  --homepage-secret-name homepage-secrets \
   --github-personal true
 ```
 
-If you do not yet have an Audiobookshelf API key on the first run, omit `--audiobookshelf-api-key`. The script will still create `homepage-secrets` with an empty value so Homepage can start; update the secret after your first Audiobookshelf admin login.
-
 Pass `--skip-k3s` if k3s is already installed.
+
+After Flux has reconciled Homepage and you have created an Audiobookshelf admin account, run:
+
+```bash
+bash ./scripts/setup-homepage-secrets.sh \
+  --media-namespace media \
+  --homepage-secret-name homepage-secrets
+```
+
+The script prompts for the Audiobookshelf API key, updates `homepage-secrets`, and restarts the Homepage deployment so the widget picks up the new value. For non-interactive use, pass `--audiobookshelf-api-key` or pipe the key with `--audiobookshelf-api-key-stdin`.
 
 ## Manual setup (alternative)
 
@@ -118,20 +124,27 @@ kubectl create namespace media
 kubectl -n media create secret generic media-smb-credentials \
   --from-literal=username='<your-smb-username>' \
   --from-literal=password='<your-smb-password>'
+```
 
-kubectl -n media create secret generic homepage-secrets \
-  --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY='<your-audiobookshelf-api-key>'
+After Audiobookshelf is deployed and you have an admin API key:
+
+```bash
+bash ./scripts/setup-homepage-secrets.sh \
+  --media-namespace media \
+  --homepage-secret-name homepage-secrets
 ```
 
 ## Deploy
 
-Once Flux is connected to this repository and the required secrets exist, Flux will reconcile:
+Once Flux is connected to this repository and the SMB secret exists, Flux will reconcile:
 
 - namespace + PV/PVCs
 - Audiobookshelf HelmRelease
 - Lyrion HelmRelease
 - Homepage Deployment + Service + ConfigMap + Ingress
 - Traefik Middleware and path-based Ingress resources
+
+After Audiobookshelf is usable, run `scripts/setup-homepage-secrets.sh` to populate `homepage-secrets` and restart Homepage.
 
 You can force reconciliation with:
 

@@ -8,12 +8,10 @@ Usage:
     --github-owner <owner> \
     --github-repo <repo> \
     --smb-username <username> \
-    [--audiobookshelf-api-key <key>] \
     [--github-branch <branch>] \
     [--flux-path <path>] \
     [--media-namespace <namespace>] \
     [--smb-secret-name <secret>] \
-    [--homepage-secret-name <secret>] \
     [--smb-password <password>] \
     [--smb-password-stdin] \
     [--github-personal <true|false>] \
@@ -36,8 +34,6 @@ SMB_PASSWORD=""
 SMB_PASSWORD_STDIN="false"
 MEDIA_NAMESPACE="media"
 SMB_SECRET_NAME="media-smb-credentials"
-HOMEPAGE_SECRET_NAME="homepage-secrets"
-AUDIOBOOKSHELF_API_KEY=""
 GITHUB_PERSONAL="true"
 SKIP_K3S="false"
 FLUX_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh"
@@ -52,12 +48,10 @@ while [[ $# -gt 0 ]]; do
     --github-branch) GITHUB_BRANCH="${2:-}"; shift 2 ;;
     --flux-path) FLUX_PATH="${2:-}"; shift 2 ;;
     --smb-username) SMB_USERNAME="${2:-}"; shift 2 ;;
-    --audiobookshelf-api-key) AUDIOBOOKSHELF_API_KEY="${2:-}"; shift 2 ;;
     --smb-password) SMB_PASSWORD="${2:-}"; shift 2 ;;
     --smb-password-stdin) SMB_PASSWORD_STDIN="true"; shift 1 ;;
     --media-namespace) MEDIA_NAMESPACE="${2:-}"; shift 2 ;;
     --smb-secret-name) SMB_SECRET_NAME="${2:-}"; shift 2 ;;
-    --homepage-secret-name) HOMEPAGE_SECRET_NAME="${2:-}"; shift 2 ;;
     --github-personal) GITHUB_PERSONAL="${2:-}"; shift 2 ;;
     --skip-k3s) SKIP_K3S="true"; shift 1 ;;
     -h|--help) usage; exit 0 ;;
@@ -227,28 +221,18 @@ fi
 flux bootstrap github "${FLUX_BOOTSTRAP_ARGS[@]}"
 
 # ---------------------------------------------------------------------------
-# Step 6: Create SMB credentials and Homepage secrets
+# Step 6: Create SMB credentials
 # ---------------------------------------------------------------------------
-echo "Creating namespace and application secrets..."
+echo "Creating namespace and SMB credentials..."
 kubectl create namespace "${MEDIA_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
 kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${SMB_SECRET_NAME}" \
   --from-literal=username="${SMB_USERNAME}" \
   --from-literal=password="${SMB_PASSWORD}" \
   --dry-run=client -o yaml | kubectl apply -f -
 
-kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${HOMEPAGE_SECRET_NAME}" \
-  --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY="${AUDIOBOOKSHELF_API_KEY}" \
-  --dry-run=client -o yaml | kubectl apply -f -
-
-if [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
-  echo "Homepage secret created without an Audiobookshelf API key."
-  echo "Update ${HOMEPAGE_SECRET_NAME}.HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY after logging into Audiobookshelf as an admin."
-  cat <<EOF
-Example:
-  kubectl -n ${MEDIA_NAMESPACE} create secret generic ${HOMEPAGE_SECRET_NAME} \\
-    --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY='<your-audiobookshelf-api-key>' \\
-    --dry-run=client -o yaml | kubectl apply -f -
+cat <<EOF
+After Homepage and Audiobookshelf are deployed, run:
+  ./scripts/setup-homepage-secrets.sh --media-namespace ${MEDIA_NAMESPACE}
 EOF
-fi
 
 echo "Done."
