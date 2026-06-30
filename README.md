@@ -187,6 +187,8 @@ http://homeserver.local:9000
 
 LMS does not support being served from a subfolder — it generates root-relative redirect URLs (e.g. `/settings/server/wizard.html`) that a subpath proxy cannot transparently rewrite. Instead, Traefik is configured with a dedicated entrypoint on port 9000 (via `infrastructure/traefik/helmchartconfig.yaml`) and an `IngressRoute` (in `apps/media/lyrion/ingressroute.yaml`) that routes all traffic on that port directly to the `lyrion-main` service at `/`. This means all internal LMS redirects resolve correctly.
 
+LMS should remain behind Kubernetes services and Traefik entrypoints (no `hostNetwork`) so edge port ownership stays centralized in Traefik.
+
 Homepage now serves `/` on port 80, while LMS remains available directly on port 9000.
 
 ## Future HTTPS and SSO
@@ -208,3 +210,4 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)
 - Keep the `$(MY_POD_IP):3000` entry in `apps/media/homepage/deployment.yaml` so Kubernetes health checks can reach Homepage on the pod IP.
 - Homepage matches `HOMEPAGE_ALLOWED_HOSTS` exactly; CIDR ranges are not supported. Add each allowed hostname or IP explicitly in `apps/media/homepage/deployment.yaml`, and keep Traefik `forwardedHeaders.trustedIPs` aligned with the networks that may send forwarded headers.
+- If LAN player discovery over UDP (for example SlimProto/UPnP-related traffic) must be exposed, prefer adding a Traefik-managed UDP entrypoint/router rather than enabling app `hostNetwork`.
