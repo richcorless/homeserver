@@ -17,6 +17,16 @@ If --audiobookshelf-api-key-stdin is provided, the script reads the key from std
 EOF
 }
 
+require_option_value() {
+  local option="${1}"
+  local value="${2:-}"
+  if [[ -z "${value}" || "${value}" == --* ]]; then
+    echo "Missing value for ${option}." >&2
+    usage
+    exit 1
+  fi
+}
+
 MEDIA_NAMESPACE="media"
 HOMEPAGE_SECRET_NAME="homepage-secrets"
 HOMEPAGE_DEPLOYMENT_NAME="homepage"
@@ -26,12 +36,32 @@ STDIN_TIMEOUT_SECONDS="60"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --audiobookshelf-api-key) AUDIOBOOKSHELF_API_KEY="${2:-}"; shift 2 ;;
+    --audiobookshelf-api-key)
+      require_option_value "$1" "${2:-}"
+      AUDIOBOOKSHELF_API_KEY="${2}"
+      shift 2
+      ;;
     --audiobookshelf-api-key-stdin) AUDIOBOOKSHELF_API_KEY_STDIN="true"; shift 1 ;;
-    --stdin-timeout-seconds) STDIN_TIMEOUT_SECONDS="${2:-}"; shift 2 ;;
-    --media-namespace) MEDIA_NAMESPACE="${2:-}"; shift 2 ;;
-    --homepage-secret-name) HOMEPAGE_SECRET_NAME="${2:-}"; shift 2 ;;
-    --homepage-deployment-name) HOMEPAGE_DEPLOYMENT_NAME="${2:-}"; shift 2 ;;
+    --stdin-timeout-seconds)
+      require_option_value "$1" "${2:-}"
+      STDIN_TIMEOUT_SECONDS="${2}"
+      shift 2
+      ;;
+    --media-namespace)
+      require_option_value "$1" "${2:-}"
+      MEDIA_NAMESPACE="${2}"
+      shift 2
+      ;;
+    --homepage-secret-name)
+      require_option_value "$1" "${2:-}"
+      HOMEPAGE_SECRET_NAME="${2}"
+      shift 2
+      ;;
+    --homepage-deployment-name)
+      require_option_value "$1" "${2:-}"
+      HOMEPAGE_DEPLOYMENT_NAME="${2}"
+      shift 2
+      ;;
     -h|--help) usage; exit 0 ;;
     *)
       echo "Unknown argument: $1" >&2
