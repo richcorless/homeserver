@@ -38,7 +38,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "${AUDIOBOOKSHELF_API_KEY_STDIN}" == "true" ]]; then
-  IFS= read -r -s AUDIOBOOKSHELF_API_KEY
+  if ! IFS= read -r -s -t 30 AUDIOBOOKSHELF_API_KEY; then
+    echo "Timed out waiting for Audiobookshelf API key on stdin." >&2
+    exit 1
+  fi
   if [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
     echo "No Audiobookshelf API key was provided on stdin." >&2
     exit 1
