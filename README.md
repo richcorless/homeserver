@@ -51,8 +51,9 @@ The following must be in place before running the setup script. They cannot be a
 5. Verifies `kubectl` is available.
 6. Installs the Flux CLI if missing (checksum-verified).
 7. Bootstraps Flux with `source-controller`, `kustomize-controller`, and `helm-controller` components to this repository at `clusters/homelab` on branch `main`.
-8. Installs the SMB CSI driver Helm chart (v1.20.1) into `kube-system`.
-9. Creates the `media` namespace and the `media-smb-credentials` secret.
+8. Creates the `media` namespace and the `media-smb-credentials` secret.
+
+> The SMB CSI driver (v1.20.1) is deployed by Flux from `infrastructure/smb-csi/`.
 
 ```bash
 export GITHUB_TOKEN='<your-github-token>'
@@ -97,24 +98,6 @@ flux bootstrap github \
   --personal \
   --token-auth
 ```
-
-### Install SMB CSI driver
-
-```bash
-helm repo add csi-driver-smb https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/release-1.20/charts
-helm repo update
-helm upgrade --install csi-driver-smb csi-driver-smb/csi-driver-smb \
-  --namespace kube-system \
-  --version 1.20.1
-```
-
-Confirm the driver is registered:
-
-```bash
-kubectl get csidriver smb.csi.k8s.io
-```
-
-> If you change the SMB CSI chart major/minor version, update both the chart version and the repo URL together.
 
 ### Create SMB credentials secret
 
