@@ -88,7 +88,7 @@ bash ./scripts/setup-homepage-secrets.sh \
   --homepage-secret-name homepage-secrets
 ```
 
-The script prompts for the Audiobookshelf API key, updates `homepage-secrets`, and restarts the Homepage deployment so the widget picks up the new value. For non-interactive use, pass `--audiobookshelf-api-key` or pipe the key with `--audiobookshelf-api-key-stdin`.
+The script prompts for the Audiobookshelf API key, updates `homepage-secrets`, and restarts the Homepage deployment so the widget picks up the new value. `--homepage-secret-name` is optional and defaults to `homepage-secrets`. For non-interactive use, pass `--audiobookshelf-api-key` or pipe the key with `--audiobookshelf-api-key-stdin`.
 
 ## Manual setup (alternative)
 

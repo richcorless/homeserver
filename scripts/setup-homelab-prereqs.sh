@@ -232,7 +232,7 @@ kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${SMB_SECRET_NAME}" \
 
 cat <<EOF
 After Homepage and Audiobookshelf are deployed, run:
-  ./scripts/setup-homepage-secrets.sh --media-namespace ${MEDIA_NAMESPACE}
+  ./scripts/setup-homepage-secrets.sh --media-namespace ${MEDIA_NAMESPACE} --homepage-secret-name homepage-secrets
 EOF
 
 echo "Done."

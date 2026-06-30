@@ -13,6 +13,7 @@ Usage:
     [--homepage-deployment-name <deployment>]
 
 If --audiobookshelf-api-key is omitted, the script prompts for it.
+If --audiobookshelf-api-key-stdin is provided, the script reads the key from stdin and ignores --audiobookshelf-api-key.
 EOF
 }
 
