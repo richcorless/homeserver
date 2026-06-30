@@ -3,4 +3,5 @@ kind: Kustomization
 resources:
   - ../../infrastructure/sources
   - ../../infrastructure/smb-csi
+  - ../../infrastructure/traefik
   - ../../apps/media

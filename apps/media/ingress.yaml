@@ -12,12 +12,12 @@ spec:
 apiVersion: traefik.io/v1alpha1
 kind: Middleware
 metadata:
-  name: strip-lms
+  name: add-audiobookshelf-prefix
   namespace: media
 spec:
-  stripPrefix:
-    prefixes:
-      - /lms
+  headers:
+    customRequestHeaders:
+      X-Forwarded-Prefix: /audiobookshelf
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -25,7 +25,7 @@ metadata:
   name: audiobookshelf
   namespace: media
   annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: media-strip-audiobookshelf@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: media-strip-audiobookshelf@kubernetescrd,media-add-audiobookshelf-prefix@kubernetescrd
 spec:
   ingressClassName: traefik
   rules:
@@ -38,23 +38,3 @@ spec:
                 name: audiobookshelf
                 port:
                   number: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: lms
-  namespace: media
-  annotations:
-    traefik.ingress.kubernetes.io/router.middlewares: media-strip-lms@kubernetescrd
-spec:
-  ingressClassName: traefik
-  rules:
-    - http:
-        paths:
-          - path: /lms
-            pathType: Prefix
-            backend:
-              service:
-                name: lyrion
-                port:
-                  number: 9000
