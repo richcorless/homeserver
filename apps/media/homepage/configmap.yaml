@@ -28,7 +28,7 @@ data:
             icon: mdi-music-circle
             href: http://homeserver.local:9000
             description: Music library and streaming
-            siteMonitor: http://lyrion.media.svc.cluster.local:9000
+            siteMonitor: http://lyrion-main.media.svc.cluster.local:9000
   bookmarks.yaml: |
     []
   widgets.yaml: |
