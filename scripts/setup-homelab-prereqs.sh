@@ -36,9 +36,6 @@ MEDIA_NAMESPACE="media"
 SMB_SECRET_NAME="media-smb-credentials"
 GITHUB_PERSONAL="true"
 SKIP_K3S="false"
-SMB_CSI_CHART_VERSION="1.20.1"
-# Keep repo URL branch aligned with SMB_CSI_CHART_VERSION major/minor.
-SMB_CSI_HELM_REPO_URL="https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/release-1.20/charts"
 FLUX_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh"
 FLUX_INSTALL_SCRIPT_SHA256="bd7765225b731a1df952456eced0abb5dbbf5e11bc70cf6ab5fddd1476088b7e"
 HELM_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/helm/helm/v3.17.3/scripts/get-helm-3"
@@ -69,12 +66,6 @@ done
 if [[ -z "${GITHUB_OWNER}" || -z "${GITHUB_REPO}" || -z "${SMB_USERNAME}" ]]; then
   echo "Missing required arguments." >&2
   usage
-  exit 1
-fi
-
-SMB_CSI_MAJOR_MINOR="$(echo "${SMB_CSI_CHART_VERSION}" | cut -d. -f1-2)"
-if [[ "${SMB_CSI_HELM_REPO_URL}" != *"release-${SMB_CSI_MAJOR_MINOR}/charts" ]]; then
-  echo "SMB_CSI_HELM_REPO_URL must match SMB_CSI_CHART_VERSION major.minor (release-${SMB_CSI_MAJOR_MINOR})." >&2
   exit 1
 fi
 
@@ -227,17 +218,7 @@ fi
 flux bootstrap github "${FLUX_BOOTSTRAP_ARGS[@]}"
 
 # ---------------------------------------------------------------------------
-# Step 6: Install SMB CSI driver
-# ---------------------------------------------------------------------------
-echo "Installing SMB CSI driver..."
-helm repo add csi-driver-smb "${SMB_CSI_HELM_REPO_URL}"
-helm repo update
-helm upgrade --install csi-driver-smb csi-driver-smb/csi-driver-smb \
-  --namespace kube-system \
-  --version "${SMB_CSI_CHART_VERSION}"
-
-# ---------------------------------------------------------------------------
-# Step 7: Create SMB credentials secret
+# Step 6: Create SMB credentials secret
 # ---------------------------------------------------------------------------
 echo "Creating namespace and SMB credentials secret..."
 kubectl create namespace "${MEDIA_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
