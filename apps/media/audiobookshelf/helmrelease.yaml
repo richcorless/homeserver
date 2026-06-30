@@ -23,6 +23,8 @@ spec:
             image:
               repository: ghcr.io/advplyr/audiobookshelf
               tag: 2.29.0
+            env:
+              BASE_URL: /audiobookshelf
     service:
       main:
         controller: main

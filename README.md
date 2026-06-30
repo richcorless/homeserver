@@ -14,7 +14,8 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
-- `/apps/media` - namespace, storage, app HelmReleases, Traefik Middleware, and Ingress resources
+- `/infrastructure/traefik` - Traefik `HelmChartConfig` adding the LMS-specific port-9000 entrypoint
+- `/apps/media` - namespace, storage, app HelmReleases, Traefik Middleware, Ingress, and IngressRoute resources
 
 ## How secrets are handled
 
@@ -124,12 +125,25 @@ flux reconcile kustomization flux-system --with-source
 
 ## Access services through Traefik
 
-k3s ships with Traefik as its built-in ingress controller. No extra deployment is needed. Use:
+k3s ships with Traefik as its built-in ingress controller. No extra deployment is needed.
 
-- `http://<server>/audiobookshelf`
-- `http://<server>/lms`
+### Audiobookshelf
 
-These paths are configured in `apps/media/ingress.yaml`. Each path has a corresponding `Middleware` resource that strips the path prefix before forwarding to the backend. Accessing `/` directly will return a 404 — that is expected since no root route is defined.
+```
+http://<server>/audiobookshelf
+```
+
+Configured in `apps/media/ingress.yaml`. The `strip-audiobookshelf` Middleware removes the prefix before forwarding to the backend, and the `add-audiobookshelf-prefix` Middleware sends `X-Forwarded-Prefix: /audiobookshelf` so that Audiobookshelf generates correct redirect URLs. The `BASE_URL=/audiobookshelf` environment variable tells Audiobookshelf to use the subfolder path for all internal links and redirects.
+
+### Lyrion Music Server (LMS)
+
+```
+http://<server>:9000
+```
+
+LMS does not support being served from a subfolder — it generates root-relative redirect URLs (e.g. `/settings/server/wizard.html`) that a subpath proxy cannot transparently rewrite. Instead, Traefik is configured with a dedicated entrypoint on port 9000 (via `infrastructure/traefik/helmchartconfig.yaml`) and an `IngressRoute` (in `apps/media/lyrion/ingressroute.yaml`) that routes all traffic on that port directly to the lyrion service at `/`. This means all internal LMS redirects resolve correctly.
+
+Accessing `/` on port 80 will return a 404 — that is expected since no root route is defined there.
 
 ## Future HTTPS and SSO
 
