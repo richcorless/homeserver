@@ -169,7 +169,7 @@ k3s ships with Traefik as its built-in ingress controller. No extra deployment i
 http://homeserver.local/
 ```
 
-Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS. The default ingress host is `homeserver.local`.
+Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS. The default bookmark still uses `homeserver.local`, but the ingress no longer restricts the host header so requests from the trusted local subnet can also use the server IP.
 
 ### Audiobookshelf
 
@@ -204,8 +204,7 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
 - If your server hostname is not `homeserver.local`, update:
-  - `apps/media/homepage/ingress.yaml` (`spec.rules[].host`)
   - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)
 - Keep the `$(MY_POD_IP):3000` entry in `apps/media/homepage/deployment.yaml` so Kubernetes health checks can reach Homepage on the pod IP.
-- If you want Homepage to accept local subnet access, add the subnet/IP entries to `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`) and ensure Traefik trusts that subnet in `infrastructure/traefik/helmchartconfig.yaml` (`forwardedHeaders.trustedIPs`).
+- If you want Homepage to accept local subnet access, add the subnet/IP entries to `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`), remove any hostname-only restriction from `apps/media/homepage/ingress.yaml`, and ensure Traefik trusts that subnet in `infrastructure/traefik/helmchartconfig.yaml` (`forwardedHeaders.trustedIPs`).
