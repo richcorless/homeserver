@@ -243,7 +243,12 @@ kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${HOMEPAGE_SECRET_NAME}" 
 if [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
   echo "Homepage secret created without an Audiobookshelf API key."
   echo "Update ${HOMEPAGE_SECRET_NAME}.HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY after logging into Audiobookshelf as an admin."
-  echo "Example: kubectl -n ${MEDIA_NAMESPACE} create secret generic ${HOMEPAGE_SECRET_NAME} --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY='<your-audiobookshelf-api-key>' --dry-run=client -o yaml | kubectl apply -f -"
+  cat <<EOF
+Example:
+  kubectl -n ${MEDIA_NAMESPACE} create secret generic ${HOMEPAGE_SECRET_NAME} \\
+    --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY='<your-audiobookshelf-api-key>' \\
+    --dry-run=client -o yaml | kubectl apply -f -
+EOF
 fi
 
 echo "Done."
