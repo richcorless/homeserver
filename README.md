@@ -4,7 +4,7 @@ GitOps repository for deploying services to a k3s cluster with Flux and Helm.
 
 ## What is deployed
 
-- ingress-nginx (single cluster ingress/reverse proxy)
+- Traefik (k3s built-in ingress controller)
 - Audiobookshelf
 - Lyrion Music Server
 
@@ -14,8 +14,7 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
-- `/apps/ingress-nginx` - ingress controller HelmRelease
-- `/apps/media` - namespace, storage, app HelmReleases, and shared Ingress
+- `/apps/media` - namespace, storage, app HelmReleases, Traefik Middleware, and Ingress resources
 
 ## How secrets are handled
 
@@ -112,11 +111,10 @@ kubectl -n media create secret generic media-smb-credentials \
 
 Once Flux is connected to this repository and the secret exists, Flux will reconcile:
 
-- ingress-nginx controller
 - namespace + PV/PVCs
 - Audiobookshelf HelmRelease
 - Lyrion HelmRelease
-- media path-based Ingress
+- Traefik Middleware and path-based Ingress resources
 
 You can force reconciliation with:
 
@@ -124,21 +122,21 @@ You can force reconciliation with:
 flux reconcile kustomization flux-system --with-source
 ```
 
-## Access services through nginx ingress
+## Access services through Traefik
 
-With ingress-nginx running, use:
+k3s ships with Traefik as its built-in ingress controller. No extra deployment is needed. Use:
 
 - `http://<server>/audiobookshelf`
 - `http://<server>/lms`
 
-These paths are configured in `apps/media/ingress.yaml` and rewritten to each app root path.
+These paths are configured in `apps/media/ingress.yaml`. Each path has a corresponding `Middleware` resource that strips the path prefix before forwarding to the backend. Accessing `/` directly will return a 404 — that is expected since no root route is defined.
 
 ## Future HTTPS and SSO
 
 The single ingress model is set up so HTTPS and SSO can be added centrally later:
 
-- add `spec.tls` to `apps/media/ingress.yaml` and issue certificates (for example with cert-manager)
-- add nginx auth annotations in `apps/media/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
+- add `spec.tls` to the Ingress resources in `apps/media/ingress.yaml` and issue certificates (for example with cert-manager)
+- add a Traefik `Middleware` with ForwardAuth in `apps/media/ingress.yaml` to integrate an SSO gateway (e.g. oauth2-proxy or authentik)
 
 ## Notes
 

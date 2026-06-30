@@ -129,6 +129,9 @@ elif command -v k3s >/dev/null 2>&1; then
   echo "k3s is already installed ($(k3s --version | head -n1)), skipping."
 else
   echo "Installing k3s..."
+  # Traefik is enabled by default in k3s and serves as the ingress controller.
+  # This repo's Ingress resources (apps/media/ingress.yaml) target ingressClassName: traefik,
+  # so Traefik must remain enabled. Do not pass --disable=traefik.
   curl -sfL https://get.k3s.io | sh -
 fi
 
