@@ -36,9 +36,20 @@ data:
   bookmarks.yaml: |
     []
   widgets.yaml: |
-    - resources:
-        expanded: true
-        cpu: true
-        memory: true
-        disk: /
-        network: true
+    - kubernetes:
+        cluster:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+          label: "cluster"
+        nodes:
+          show: true
+          cpu: true
+          memory: true
+          showLabel: true
+    - datetime:
+        text_size: xl
+        format:
+          dateStyle: short
+          timeStyle: short
