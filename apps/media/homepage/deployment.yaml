@@ -19,8 +19,12 @@ spec:
             - containerPort: 3000
               name: http
           env:
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: homeserver.local,localhost,10.1.10.0/24
+              value: $(MY_POD_IP):3000,homeserver.local,localhost,10.1.10.0/24
             - name: HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY
               valueFrom:
                 secretKeyRef:
@@ -31,12 +35,10 @@ spec:
             httpGet:
               path: /api/healthcheck
               port: http
-              host: localhost
           livenessProbe:
             httpGet:
               path: /api/healthcheck
               port: http
-              host: localhost
           volumeMounts:
             - name: homepage-config
               mountPath: /app/config/settings.yaml
