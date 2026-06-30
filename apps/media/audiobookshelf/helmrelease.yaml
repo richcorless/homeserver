@@ -4,6 +4,9 @@ metadata:
   name: audiobookshelf
 spec:
   interval: 30m
+  dependsOn:
+    - name: smb-csi-driver
+      namespace: kube-system
   chart:
     spec:
       chart: app-template
