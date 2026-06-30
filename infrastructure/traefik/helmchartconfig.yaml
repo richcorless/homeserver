@@ -9,11 +9,11 @@ spec:
       web:
         forwardedHeaders:
           trustedIPs:
-            - 10.1.10.0/24
+            - 10.1.40.0/24
       websecure:
         forwardedHeaders:
           trustedIPs:
-            - 10.1.10.0/24
+            - 10.1.40.0/24
       lms-web:
         port: 9000
         expose:
@@ -22,4 +22,4 @@ spec:
         protocol: TCP
         forwardedHeaders:
           trustedIPs:
-            - 10.1.10.0/24
+            - 10.1.40.0/24
