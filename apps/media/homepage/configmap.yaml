@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: homepage-config
+data:
+  settings.yaml: |
+    title: Homeserver
+    description: Homelab services
+    target: _self
+    statusStyle: dot
+    layout:
+      Media:
+        style: row
+        columns: 2
+  services.yaml: |
+    - Media:
+        - Audiobookshelf:
+            icon: audiobookshelf.png
+            href: /audiobookshelf
+            description: Audiobooks and podcasts
+            siteMonitor: http://audiobookshelf.media.svc.cluster.local/audiobookshelf
+            widget:
+              type: audiobookshelf
+              url: http://audiobookshelf.media.svc.cluster.local/audiobookshelf
+              key: "{{HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY}}"
+              fields: ["books", "podcasts"]
+        - Lyrion Music Server:
+            icon: mdi-music-circle
+            href: http://10.1.40.21:9000
+            description: Music library and streaming
+            siteMonitor: http://lyrion.media.svc.cluster.local:9000
+  bookmarks.yaml: |
+    []
+  widgets.yaml: |
+    []

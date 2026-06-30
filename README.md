@@ -5,6 +5,7 @@ GitOps repository for deploying services to a k3s cluster with Flux and Helm.
 ## What is deployed
 
 - Traefik (k3s built-in ingress controller)
+- Homepage
 - Audiobookshelf
 - Lyrion Music Server
 
@@ -15,7 +16,7 @@ Both apps mount media from a remote SMB server at `10.1.10.10`.
 - `/clusters/homelab` - root kustomization Flux should reconcile
 - `/infrastructure/sources` - HelmRepository definitions
 - `/infrastructure/traefik` - Traefik `HelmChartConfig` adding the LMS-specific port-9000 entrypoint
-- `/apps/media` - namespace, storage, app HelmReleases, Traefik Middleware, Ingress, and IngressRoute resources
+- `/apps/media` - namespace, storage, app manifests, HelmReleases, Traefik Middleware, Ingress, and IngressRoute resources
 
 ## How secrets are handled
 
@@ -26,7 +27,13 @@ The SMB PVs reference a Kubernetes secret named `media-smb-credentials` in the `
 - `username`
 - `password`
 
-This secret is created by the setup script (or manually, see below) before Flux reconciliation begins.
+Homepage references a Kubernetes secret named `homepage-secrets` in the `media` namespace:
+
+- `HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY`
+
+This key should contain an Audiobookshelf admin API token. You can find it in the Audiobookshelf web UI under **Settings → Users → your account** after the initial admin account is created.
+
+These secrets are created by the setup script (or manually, see below) before or after Flux reconciliation begins.
 
 ## Prerequisites
 
@@ -39,6 +46,7 @@ The following must be in place before running the setup script. They cannot be a
    - `//10.1.10.10/Music Lossless`
 3. **A GitHub personal access token** (`GITHUB_TOKEN`) with repo admin permissions, used by Flux bootstrap.
 4. **SMB credentials** (username and password) for the shares above.
+5. **Audiobookshelf API key** for Homepage's Audiobookshelf widget. This is optional for the first bootstrap run, but required if you want the widget populated once Homepage is up.
 
 ## Setup (recommended: one-shot script)
 
@@ -51,7 +59,7 @@ The following must be in place before running the setup script. They cannot be a
 5. Verifies `kubectl` is available.
 6. Installs the Flux CLI if missing (checksum-verified).
 7. Bootstraps Flux with `source-controller`, `kustomize-controller`, and `helm-controller` components to this repository at `clusters/homelab` on branch `main`.
-8. Creates the `media` namespace and the `media-smb-credentials` secret.
+8. Creates the `media` namespace, the `media-smb-credentials` secret, and the `homepage-secrets` secret.
 
 > The SMB CSI driver (v1.20.1) is deployed by Flux from `infrastructure/smb-csi/`.
 
@@ -64,11 +72,15 @@ bash ./scripts/setup-homelab-prereqs.sh \
   --github-branch main \
   --flux-path clusters/homelab \
   --smb-username '<your-smb-username>' \
+  --audiobookshelf-api-key '<your-audiobookshelf-api-key>' \
   --smb-password-stdin \
   --media-namespace media \
   --smb-secret-name media-smb-credentials \
+  --homepage-secret-name homepage-secrets \
   --github-personal true
 ```
+
+If you do not yet have an Audiobookshelf API key on the first run, omit `--audiobookshelf-api-key`. The script will still create `homepage-secrets` with an empty value so Homepage can start; update the secret after your first Audiobookshelf admin login.
 
 Pass `--skip-k3s` if k3s is already installed.
 
@@ -99,22 +111,26 @@ flux bootstrap github \
   --token-auth
 ```
 
-### Create SMB credentials secret
+### Create required secrets
 
 ```bash
 kubectl create namespace media
 kubectl -n media create secret generic media-smb-credentials \
   --from-literal=username='<your-smb-username>' \
   --from-literal=password='<your-smb-password>'
+
+kubectl -n media create secret generic homepage-secrets \
+  --from-literal=HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY='<your-audiobookshelf-api-key>'
 ```
 
 ## Deploy
 
-Once Flux is connected to this repository and the secret exists, Flux will reconcile:
+Once Flux is connected to this repository and the required secrets exist, Flux will reconcile:
 
 - namespace + PV/PVCs
 - Audiobookshelf HelmRelease
 - Lyrion HelmRelease
+- Homepage Deployment + Service + ConfigMap + Ingress
 - Traefik Middleware and path-based Ingress resources
 
 You can force reconciliation with:
@@ -126,6 +142,14 @@ flux reconcile kustomization flux-system --with-source
 ## Access services through Traefik
 
 k3s ships with Traefik as its built-in ingress controller. No extra deployment is needed.
+
+### Homepage
+
+```
+http://<server>/
+```
+
+Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS.
 
 ### Audiobookshelf
 
@@ -143,7 +167,7 @@ http://<server>:9000
 
 LMS does not support being served from a subfolder — it generates root-relative redirect URLs (e.g. `/settings/server/wizard.html`) that a subpath proxy cannot transparently rewrite. Instead, Traefik is configured with a dedicated entrypoint on port 9000 (via `infrastructure/traefik/helmchartconfig.yaml`) and an `IngressRoute` (in `apps/media/lyrion/ingressroute.yaml`) that routes all traffic on that port directly to the lyrion service at `/`. This means all internal LMS redirects resolve correctly.
 
-Accessing `/` on port 80 will return a 404 — that is expected since no root route is defined there.
+Homepage now serves `/` on port 80, while LMS remains available directly on port 9000.
 
 ## Future HTTPS and SSO
 
@@ -159,3 +183,6 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/storage/music-pv.yaml`
   - `apps/media/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
+- If your server IP is not `10.1.40.21`, update:
+  - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
+  - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)

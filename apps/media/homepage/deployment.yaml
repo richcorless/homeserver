@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homepage
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homepage
+  template:
+    metadata:
+      labels:
+        app: homepage
+    spec:
+      containers:
+        - name: homepage
+          image: ghcr.io/gethomepage/homepage:v1.13.2
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: 10.1.40.21,10.1.40.21:80
+            - name: HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: homepage-secrets
+                  key: HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY
+                  optional: true
+          readinessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+          livenessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+          volumeMounts:
+            - name: homepage-config
+              mountPath: /app/config/settings.yaml
+              subPath: settings.yaml
+            - name: homepage-config
+              mountPath: /app/config/services.yaml
+              subPath: services.yaml
+            - name: homepage-config
+              mountPath: /app/config/bookmarks.yaml
+              subPath: bookmarks.yaml
+            - name: homepage-config
+              mountPath: /app/config/widgets.yaml
+              subPath: widgets.yaml
+      volumes:
+        - name: homepage-config
+          configMap:
+            name: homepage-config
