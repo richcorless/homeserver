@@ -18,6 +18,9 @@ spec:
   values:
     controllers:
       main:
+        pod:
+          nodeSelector:
+            homeserver.richcorless.io/node-tier: trusted
         containers:
           main:
             image:

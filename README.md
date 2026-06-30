@@ -10,6 +10,7 @@ GitOps repository for deploying services to a k3s cluster with Flux and Helm.
 - Lyrion Music Server
 
 Both apps mount media from a remote SMB server at `10.1.10.10`.
+For a dual-node deployment, Homepage and Audiobookshelf run on the trusted node, and Lyrion runs on an untrusted node.
 
 ## Repository layout
 
@@ -48,7 +49,7 @@ The following must be in place before running the setup script. They cannot be a
 4. **SMB credentials** (username and password) for the shares above.
 5. **Audiobookshelf API key** for Homepage's Audiobookshelf widget. This is created in Audiobookshelf after the first admin login, so it is configured in a second step after deployment.
 
-## Setup (recommended: bootstrap, then configure Homepage secret)
+## Setup (recommended: bootstrap primary first, then join secondary, then configure Homepage secret)
 
 `scripts/setup-homelab-prereqs.sh` handles the cluster bootstrap in one command. It:
 
@@ -58,8 +59,9 @@ The following must be in place before running the setup script. They cannot be a
 4. Installs Helm if missing (checksum-verified).
 5. Verifies `kubectl` is available.
 6. Installs the Flux CLI if missing (checksum-verified).
-7. Bootstraps Flux with `source-controller`, `kustomize-controller`, and `helm-controller` components to this repository at `clusters/homelab` on branch `main`.
-8. Creates the `media` namespace and the `media-smb-credentials` secret.
+7. Labels the node as trusted (`homeserver.richcorless.io/node-tier=trusted`) when deployed as primary.
+8. Bootstraps Flux with `source-controller`, `kustomize-controller`, and `helm-controller` components to this repository at `clusters/homelab` on branch `main` (primary role only).
+9. Creates the `media` namespace and the `media-smb-credentials` secret (primary role only).
 
 > The SMB CSI driver (v1.20.1) is deployed by Flux from `infrastructure/smb-csi/`.
 
@@ -67,6 +69,7 @@ The following must be in place before running the setup script. They cannot be a
 export GITHUB_TOKEN='<your-github-token>'
 echo '<your-smb-password>' | \
 bash ./scripts/setup-homelab-prereqs.sh \
+  --k3s-deployment-role primary \
   --github-owner richcorless \
   --github-repo homeserver \
   --github-branch main \
@@ -77,6 +80,21 @@ bash ./scripts/setup-homelab-prereqs.sh \
   --smb-secret-name media-smb-credentials \
   --github-personal true
 ```
+
+Then join the untrusted secondary node:
+
+```bash
+echo '<your-k3s-node-token>' | \
+bash ./scripts/setup-homelab-prereqs.sh \
+  --k3s-deployment-role secondary \
+  --k3s-server-url 'https://10.1.10.20:6443' \
+  --k3s-token-stdin
+```
+
+The secondary role joins with:
+
+- node label `homeserver.richcorless.io/node-tier=untrusted`
+- node taint `homeserver.richcorless.io/untrusted=true:NoSchedule`
 
 Pass `--skip-k3s` if k3s is already installed.
 
@@ -152,6 +170,13 @@ Once Flux is connected to this repository and the SMB secret exists, Flux will r
 - Traefik Middleware and path-based Ingress resources
 
 After Audiobookshelf is usable, run `scripts/setup-homepage-secrets.sh` to populate `homepage-secrets` and restart Homepage.
+
+## Node placement and taints
+
+- Homepage deployment and Audiobookshelf HelmRelease use `nodeSelector` for `homeserver.richcorless.io/node-tier=trusted`.
+- Lyrion HelmRelease uses `nodeSelector` for `homeserver.richcorless.io/node-tier=untrusted`.
+- Lyrion also includes a toleration for taint `homeserver.richcorless.io/untrusted=true:NoSchedule`.
+- This keeps trusted workloads off the untrusted node while allowing primary-node Traefik to route to Lyrion over cluster networking.
 
 You can force reconciliation with:
 

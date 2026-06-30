@@ -5,9 +5,22 @@ usage() {
   cat <<'EOF'
 Usage:
   setup-homelab-prereqs.sh \
-    --github-owner <owner> \
-    --github-repo <repo> \
-    --smb-username <username> \
+    --k3s-deployment-role <primary|secondary> \
+    [primary-only flags...] \
+    [secondary-only flags...] \
+    [common flags...]
+
+Primary role flags:
+  --github-owner <owner>
+  --github-repo <repo>
+  --smb-username <username>
+
+Secondary role flags:
+  --k3s-server-url <https://primary:6443>
+  [--k3s-token <token>]
+  [--k3s-token-stdin]
+
+Common flags:
     [--github-branch <branch>] \
     [--flux-path <path>] \
     [--media-namespace <namespace>] \
@@ -17,7 +30,7 @@ Usage:
     [--github-personal <true|false>] \
     [--skip-k3s]
 
-Required environment variable:
+Required environment variable (primary role only):
   GITHUB_TOKEN  GitHub token used by 'flux bootstrap github'
 
 Options:
@@ -29,6 +42,10 @@ GITHUB_OWNER=""
 GITHUB_REPO=""
 GITHUB_BRANCH="main"
 FLUX_PATH="clusters/homelab"
+K3S_DEPLOYMENT_ROLE="primary"
+K3S_SERVER_URL=""
+K3S_TOKEN=""
+K3S_TOKEN_STDIN="false"
 SMB_USERNAME=""
 SMB_PASSWORD=""
 SMB_PASSWORD_STDIN="false"
@@ -36,6 +53,9 @@ MEDIA_NAMESPACE="media"
 SMB_SECRET_NAME="media-smb-credentials"
 GITHUB_PERSONAL="true"
 SKIP_K3S="false"
+TRUSTED_NODE_LABEL="homeserver.richcorless.io/node-tier=trusted"
+UNTRUSTED_NODE_LABEL="homeserver.richcorless.io/node-tier=untrusted"
+UNTRUSTED_NODE_TAINT="homeserver.richcorless.io/untrusted=true:NoSchedule"
 FLUX_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/fluxcd/flux2/v2.6.4/install/flux.sh"
 FLUX_INSTALL_SCRIPT_SHA256="bd7765225b731a1df952456eced0abb5dbbf5e11bc70cf6ab5fddd1476088b7e"
 HELM_INSTALL_SCRIPT_URL="https://raw.githubusercontent.com/helm/helm/v3.17.3/scripts/get-helm-3"
@@ -43,6 +63,10 @@ HELM_INSTALL_SCRIPT_SHA256="4a01413bf2a767ae744b8bbe4485cd83654d9a0a769c92377afc
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --k3s-deployment-role) K3S_DEPLOYMENT_ROLE="${2:-}"; shift 2 ;;
+    --k3s-server-url) K3S_SERVER_URL="${2:-}"; shift 2 ;;
+    --k3s-token) K3S_TOKEN="${2:-}"; shift 2 ;;
+    --k3s-token-stdin) K3S_TOKEN_STDIN="true"; shift 1 ;;
     --github-owner) GITHUB_OWNER="${2:-}"; shift 2 ;;
     --github-repo) GITHUB_REPO="${2:-}"; shift 2 ;;
     --github-branch) GITHUB_BRANCH="${2:-}"; shift 2 ;;
@@ -63,28 +87,55 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${GITHUB_OWNER}" || -z "${GITHUB_REPO}" || -z "${SMB_USERNAME}" ]]; then
-  echo "Missing required arguments." >&2
+if [[ "${K3S_DEPLOYMENT_ROLE}" != "primary" && "${K3S_DEPLOYMENT_ROLE}" != "secondary" ]]; then
+  echo "--k3s-deployment-role must be either 'primary' or 'secondary'." >&2
   usage
   exit 1
 fi
 
-if [[ -z "${SMB_PASSWORD}" && "${SMB_PASSWORD_STDIN}" == "true" ]]; then
-  IFS= read -r -s SMB_PASSWORD
-  if [[ -z "${SMB_PASSWORD}" ]]; then
-    echo "No SMB password was provided on stdin." >&2
+if [[ "${K3S_DEPLOYMENT_ROLE}" == "secondary" && -z "${K3S_SERVER_URL}" ]]; then
+  echo "--k3s-server-url is required for secondary role." >&2
+  usage
+  exit 1
+fi
+
+if [[ -z "${K3S_TOKEN}" && "${K3S_TOKEN_STDIN}" == "true" ]]; then
+  IFS= read -r -s K3S_TOKEN
+  if [[ -z "${K3S_TOKEN}" ]]; then
+    echo "No k3s token was provided on stdin." >&2
     exit 1
   fi
 fi
 
-if [[ -z "${SMB_PASSWORD}" ]]; then
-  read -r -s -p "Enter SMB password: " SMB_PASSWORD
+if [[ "${K3S_DEPLOYMENT_ROLE}" == "secondary" && -z "${K3S_TOKEN}" && "${SKIP_K3S}" != "true" ]]; then
+  read -r -s -p "Enter k3s node token: " K3S_TOKEN
   echo
 fi
 
-if [[ -z "${GITHUB_TOKEN:-}" ]]; then
-  echo "GITHUB_TOKEN must be set for Flux bootstrap." >&2
-  exit 1
+if [[ "${K3S_DEPLOYMENT_ROLE}" == "primary" ]]; then
+  if [[ -z "${GITHUB_OWNER}" || -z "${GITHUB_REPO}" || -z "${SMB_USERNAME}" ]]; then
+    echo "Primary role is missing required arguments." >&2
+    usage
+    exit 1
+  fi
+
+  if [[ -z "${SMB_PASSWORD}" && "${SMB_PASSWORD_STDIN}" == "true" ]]; then
+    IFS= read -r -s SMB_PASSWORD
+    if [[ -z "${SMB_PASSWORD}" ]]; then
+      echo "No SMB password was provided on stdin." >&2
+      exit 1
+    fi
+  fi
+
+  if [[ -z "${SMB_PASSWORD}" ]]; then
+    read -r -s -p "Enter SMB password: " SMB_PASSWORD
+    echo
+  fi
+
+  if [[ -z "${GITHUB_TOKEN:-}" ]]; then
+    echo "GITHUB_TOKEN must be set for Flux bootstrap." >&2
+    exit 1
+  fi
 fi
 
 # ---------------------------------------------------------------------------
@@ -127,20 +178,34 @@ if [[ "${SKIP_K3S}" == "true" ]]; then
   echo "Skipping k3s installation (--skip-k3s)."
 elif command -v k3s >/dev/null 2>&1; then
   echo "k3s is already installed ($(k3s --version | head -n1)), skipping."
+  if [[ "${K3S_DEPLOYMENT_ROLE}" == "secondary" ]]; then
+    echo "Ensure this node has label '${UNTRUSTED_NODE_LABEL}' and taint '${UNTRUSTED_NODE_TAINT}'."
+  fi
 else
-  echo "Installing k3s..."
+  echo "Installing k3s (${K3S_DEPLOYMENT_ROLE} role)..."
   # Traefik is enabled by default in k3s and serves as the ingress controller.
   # This repo's Ingress resources (apps/media/ingress.yaml) target ingressClassName: traefik,
   # so Traefik must remain enabled. Do not pass --disable=traefik.
-  curl -sfL https://get.k3s.io | sh -
+  if [[ "${K3S_DEPLOYMENT_ROLE}" == "primary" ]]; then
+    INSTALL_K3S_EXEC="server --node-label ${TRUSTED_NODE_LABEL}" curl -sfL https://get.k3s.io | sh -
+  else
+    if [[ -z "${K3S_TOKEN}" ]]; then
+      echo "k3s token is required to install a secondary node." >&2
+      exit 1
+    fi
+    K3S_URL="${K3S_SERVER_URL}" K3S_TOKEN="${K3S_TOKEN}" \
+      INSTALL_K3S_EXEC="agent --node-label ${UNTRUSTED_NODE_LABEL} --node-taint ${UNTRUSTED_NODE_TAINT}" \
+      curl -sfL https://get.k3s.io | sh -
+  fi
 fi
 
-# k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml (owned by root, mode 600).
-# Export it inline so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
-# Note: Non-root users may need to copy the file to ~/.kube/config with appropriate ownership.
-if [[ -z "${KUBECONFIG:-}" ]]; then
-  export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-fi
+if [[ "${K3S_DEPLOYMENT_ROLE}" == "primary" ]]; then
+  # k3s writes its kubeconfig to /etc/rancher/k3s/k3s.yaml (owned by root, mode 600).
+  # Export it inline so kubectl/helm/flux can reach the cluster if KUBECONFIG is not already set.
+  # Note: Non-root users may need to copy the file to ~/.kube/config with appropriate ownership.
+  if [[ -z "${KUBECONFIG:-}" ]]; then
+    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+  fi
 
 # ---------------------------------------------------------------------------
 # Step 3: Install Helm (if not already present) and verify kubectl
@@ -236,5 +301,13 @@ After Homepage and Audiobookshelf are deployed, run:
 If you changed the secret name, also pass:
   --homepage-secret-name <your-homepage-secret-name>
 EOF
+else
+  cat <<EOF
+Secondary node joined with:
+  --node-label ${UNTRUSTED_NODE_LABEL}
+  --node-taint ${UNTRUSTED_NODE_TAINT}
+This node is now reserved for workloads that explicitly tolerate the untrusted taint.
+EOF
+fi
 
 echo "Done."

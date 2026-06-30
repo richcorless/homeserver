@@ -12,6 +12,8 @@ spec:
       labels:
         app: homepage
     spec:
+      nodeSelector:
+        homeserver.richcorless.io/node-tier: trusted
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v1.13.2

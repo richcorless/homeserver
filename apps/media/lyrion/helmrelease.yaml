@@ -18,6 +18,14 @@ spec:
   values:
     controllers:
       main:
+        pod:
+          nodeSelector:
+            homeserver.richcorless.io/node-tier: untrusted
+          tolerations:
+            - key: homeserver.richcorless.io/untrusted
+              operator: Equal
+              value: "true"
+              effect: NoSchedule
         containers:
           main:
             image:
