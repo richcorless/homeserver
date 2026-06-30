@@ -18,6 +18,8 @@ spec:
   values:
     controllers:
       main:
+        pod:
+          hostNetwork: true
         containers:
           main:
             image:
@@ -30,6 +32,17 @@ spec:
           http:
             port: 9000
             targetPort: 9000
+          slimproto:
+            port: 3483
+            targetPort: 3483
+            protocol: TCP
+      slimproto-udp:
+        controller: main
+        ports:
+          slimproto-udp:
+            port: 3483
+            targetPort: 3483
+            protocol: UDP
     persistence:
       config:
         enabled: true
