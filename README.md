@@ -166,15 +166,15 @@ k3s ships with Traefik as its built-in ingress controller. No extra deployment i
 ### Homepage
 
 ```
-http://<server>/
+http://homeserver.local/
 ```
 
-Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS.
+Homepage is served from the root URL and provides quick links plus health visibility for Audiobookshelf and LMS. The default ingress host is `homeserver.local`.
 
 ### Audiobookshelf
 
 ```
-http://<server>/audiobookshelf
+http://homeserver.local/audiobookshelf
 ```
 
 Configured in `apps/media/ingress.yaml`. The `strip-audiobookshelf` Middleware removes the prefix before forwarding to the backend, and the `add-audiobookshelf-prefix` Middleware sends `X-Forwarded-Prefix: /audiobookshelf` so that Audiobookshelf generates correct redirect URLs. The `BASE_URL=/audiobookshelf` environment variable tells Audiobookshelf to use the subfolder path for all internal links and redirects.
@@ -182,7 +182,7 @@ Configured in `apps/media/ingress.yaml`. The `strip-audiobookshelf` Middleware r
 ### Lyrion Music Server (LMS)
 
 ```
-http://<server>:9000
+http://homeserver.local:9000
 ```
 
 LMS does not support being served from a subfolder — it generates root-relative redirect URLs (e.g. `/settings/server/wizard.html`) that a subpath proxy cannot transparently rewrite. Instead, Traefik is configured with a dedicated entrypoint on port 9000 (via `infrastructure/traefik/helmchartconfig.yaml`) and an `IngressRoute` (in `apps/media/lyrion/ingressroute.yaml`) that routes all traffic on that port directly to the lyrion service at `/`. This means all internal LMS redirects resolve correctly.
@@ -203,6 +203,7 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/storage/music-pv.yaml`
   - `apps/media/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
-- If your server IP is not `10.1.40.21`, update:
+- If your server hostname is not `homeserver.local`, update:
+  - `apps/media/homepage/ingress.yaml` (`spec.rules[].host`)
   - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)

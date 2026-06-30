@@ -26,7 +26,7 @@ data:
               fields: ["books", "podcasts"]
         - Lyrion Music Server:
             icon: mdi-music-circle
-            href: http://10.1.40.21:9000
+            href: http://homeserver.local:9000
             description: Music library and streaming
             siteMonitor: http://lyrion.media.svc.cluster.local:9000
   bookmarks.yaml: |
