@@ -207,4 +207,5 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/homepage/ingress.yaml` (`spec.rules[].host`)
   - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)
+- Keep the `$(MY_POD_IP):3000` entry in `apps/media/homepage/deployment.yaml` so Kubernetes health checks can reach Homepage on the pod IP.
 - If you want Homepage to accept local subnet access, add the subnet/IP entries to `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`) and ensure Traefik trusts that subnet in `infrastructure/traefik/helmchartconfig.yaml` (`forwardedHeaders.trustedIPs`).
