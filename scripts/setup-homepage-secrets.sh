@@ -37,15 +37,13 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -z "${AUDIOBOOKSHELF_API_KEY}" && "${AUDIOBOOKSHELF_API_KEY_STDIN}" == "true" ]]; then
+if [[ "${AUDIOBOOKSHELF_API_KEY_STDIN}" == "true" ]]; then
   IFS= read -r -s AUDIOBOOKSHELF_API_KEY
   if [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
     echo "No Audiobookshelf API key was provided on stdin." >&2
     exit 1
   fi
-fi
-
-if [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
+elif [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
   read -r -s -p "Enter Audiobookshelf API key: " AUDIOBOOKSHELF_API_KEY
   echo
 fi
