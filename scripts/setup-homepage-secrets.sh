@@ -43,7 +43,7 @@ done
 
 if [[ "${AUDIOBOOKSHELF_API_KEY_STDIN}" == "true" ]]; then
   if ! IFS= read -r -s -t "${STDIN_TIMEOUT_SECONDS}" AUDIOBOOKSHELF_API_KEY; then
-    echo "Timed out waiting for Audiobookshelf API key on stdin." >&2
+    echo "Timed out waiting for Audiobookshelf API key on stdin. Adjust with --stdin-timeout-seconds if needed." >&2
     exit 1
   fi
   if [[ -z "${AUDIOBOOKSHELF_API_KEY}" ]]; then
