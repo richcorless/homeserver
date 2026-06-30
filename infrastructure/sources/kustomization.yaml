@@ -2,5 +2,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
   - helmrepository-bjw-s.yaml
-  - helmrepository-ingress-nginx.yaml
   - helmrepository-smb-csi.yaml

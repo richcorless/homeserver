@@ -3,5 +3,4 @@ kind: Kustomization
 resources:
   - ../../infrastructure/sources
   - ../../infrastructure/smb-csi
-  - ../../apps/ingress-nginx
   - ../../apps/media
