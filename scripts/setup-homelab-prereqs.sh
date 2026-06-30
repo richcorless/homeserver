@@ -221,19 +221,20 @@ fi
 flux bootstrap github "${FLUX_BOOTSTRAP_ARGS[@]}"
 
 # ---------------------------------------------------------------------------
-# Step 6: Create SMB credentials secret
+# Step 6: Create SMB credentials
 # ---------------------------------------------------------------------------
-echo "Creating namespace and SMB credentials secret..."
+echo "Creating namespace and SMB credentials..."
 kubectl create namespace "${MEDIA_NAMESPACE}" --dry-run=client -o yaml | kubectl apply -f -
-kubectl -n "${MEDIA_NAMESPACE}" apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: ${SMB_SECRET_NAME}
-type: Opaque
-stringData:
-  username: ${SMB_USERNAME}
-  password: ${SMB_PASSWORD}
+kubectl -n "${MEDIA_NAMESPACE}" create secret generic "${SMB_SECRET_NAME}" \
+  --from-literal=username="${SMB_USERNAME}" \
+  --from-literal=password="${SMB_PASSWORD}" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+cat <<EOF
+After Homepage and Audiobookshelf are deployed, run:
+  ./scripts/setup-homepage-secrets.sh --media-namespace "${MEDIA_NAMESPACE}"
+If you changed the secret name, also pass:
+  --homepage-secret-name <your-homepage-secret-name>
 EOF
 
 echo "Done."
