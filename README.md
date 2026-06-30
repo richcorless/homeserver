@@ -207,3 +207,4 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/homepage/ingress.yaml` (`spec.rules[].host`)
   - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)
+- If you want Homepage to accept local subnet access, add the subnet/IP entries to `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`) and ensure Traefik trusts that subnet in `infrastructure/traefik/helmchartconfig.yaml` (`forwardedHeaders.trustedIPs`).

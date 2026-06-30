@@ -20,7 +20,7 @@ spec:
               name: http
           env:
             - name: HOMEPAGE_ALLOWED_HOSTS
-              value: homeserver.local,localhost
+              value: homeserver.local,localhost,10.1.10.0/24
             - name: HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY
               valueFrom:
                 secretKeyRef:
