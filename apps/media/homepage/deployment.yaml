@@ -45,17 +45,7 @@ spec:
               port: http
           volumeMounts:
             - name: homepage-config
-              mountPath: /app/config/settings.yaml
-              subPath: settings.yaml
-            - name: homepage-config
-              mountPath: /app/config/services.yaml
-              subPath: services.yaml
-            - name: homepage-config
-              mountPath: /app/config/bookmarks.yaml
-              subPath: bookmarks.yaml
-            - name: homepage-config
-              mountPath: /app/config/widgets.yaml
-              subPath: widgets.yaml
+              mountPath: /app/config
       volumes:
         - name: homepage-config
           configMap:

@@ -1,0 +1,8 @@
+title: Homeserver
+description: Homelab services
+target: _self
+statusStyle: dot
+layout:
+  Media:
+    style: row
+    columns: 2
