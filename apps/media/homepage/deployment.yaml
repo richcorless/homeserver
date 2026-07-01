@@ -35,6 +35,8 @@ spec:
                   name: homepage-secrets
                   key: HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY
                   optional: true
+            - name: LOG_LEVEL
+              value: debug
           readinessProbe:
             httpGet:
               path: /api/healthcheck
@@ -45,17 +47,7 @@ spec:
               port: http
           volumeMounts:
             - name: homepage-config
-              mountPath: /app/config/settings.yaml
-              subPath: settings.yaml
-            - name: homepage-config
-              mountPath: /app/config/services.yaml
-              subPath: services.yaml
-            - name: homepage-config
-              mountPath: /app/config/bookmarks.yaml
-              subPath: bookmarks.yaml
-            - name: homepage-config
-              mountPath: /app/config/widgets.yaml
-              subPath: widgets.yaml
+              mountPath: /app/config
       volumes:
         - name: homepage-config
           configMap:
