@@ -1,0 +1,20 @@
+- Media:
+    - Audiobookshelf:
+        icon: audiobookshelf.png
+        href: /audiobookshelf
+        description: Audiobooks and podcasts
+        siteMonitor: http://audiobookshelf.media.svc.cluster.local
+        widget:
+          type: audiobookshelf
+          url: http://audiobookshelf.media.svc.cluster.local
+          key: "{{HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY}}"
+          fields: ["books", "podcasts"]
+    - Lyrion Music Server:
+        icon: lyrion.svg
+        href: http://{{HOMEPAGE_VAR_HOST_IP}}:9000
+        description: Music library and streaming
+        siteMonitor: http://lyrion-main.media.svc.cluster.local:9000
+        widget:
+          type: lms
+          url: http://lyrion-main.media.svc.cluster.local:9000
+          fields: ["players", "albums", "artists", "songs"]

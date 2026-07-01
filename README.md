@@ -231,8 +231,10 @@ The single ingress model is set up so HTTPS and SSO can be added centrally later
   - `apps/media/storage/music-lossless-pv.yaml`
 - If your cluster does not use the `local-path` StorageClass, update the config PVC manifests.
 - If your server hostname is not `homeserver.local`, update:
-  - `apps/media/homepage/configmap.yaml` (`Lyrion Music Server.href`)
+  - `apps/media/homepage/config/services.yaml` (`Lyrion Music Server.href`)
   - `apps/media/homepage/deployment.yaml` (`HOMEPAGE_ALLOWED_HOSTS`)
+- Homepage config files live in `apps/media/homepage/config/` and are managed by a kustomize `configMapGenerator`. Whenever any config file changes, kustomize generates a new ConfigMap name (content hash suffix) which forces a rolling update of the Homepage pod automatically — no manual restart needed.
+- Homepage reaches Audiobookshelf widgets and health checks through the in-cluster service URL (`http://audiobookshelf.media.svc.cluster.local`) rather than the external `/audiobookshelf` ingress path, because the Traefik subpath middleware only applies at the ingress layer.
 - Keep the `$(MY_POD_IP):3000` entry in `apps/media/homepage/deployment.yaml` so Kubernetes health checks can reach Homepage on the pod IP.
 - Homepage matches `HOMEPAGE_ALLOWED_HOSTS` exactly; CIDR ranges are not supported. Add each allowed hostname or IP explicitly in `apps/media/homepage/deployment.yaml`, and keep Traefik `forwardedHeaders.trustedIPs` aligned with the networks that may send forwarded headers.
 - If LAN player discovery over UDP (for example SlimProto/UPnP-related traffic) must be exposed, prefer adding a Traefik-managed UDP entrypoint/router rather than enabling app `hostNetwork`.

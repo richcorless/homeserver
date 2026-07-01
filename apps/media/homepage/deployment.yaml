@@ -12,8 +12,21 @@ spec:
       labels:
         app: homepage
     spec:
+<<<<<<< HEAD
       nodeSelector:
         homeserver.richcorless.io/node-tier: trusted
+=======
+      serviceAccountName: homepage
+      initContainers:
+        - name: copy-config
+          image: busybox
+          command: ["sh", "-c", "cp /config-readonly/* /app/config/"]
+          volumeMounts:
+            - name: homepage-config
+              mountPath: /config-readonly
+            - name: homepage-config-writable
+              mountPath: /app/config
+>>>>>>> origin/main
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v1.13.2
@@ -46,19 +59,11 @@ spec:
               path: /api/healthcheck
               port: http
           volumeMounts:
-            - name: homepage-config
-              mountPath: /app/config/settings.yaml
-              subPath: settings.yaml
-            - name: homepage-config
-              mountPath: /app/config/services.yaml
-              subPath: services.yaml
-            - name: homepage-config
-              mountPath: /app/config/bookmarks.yaml
-              subPath: bookmarks.yaml
-            - name: homepage-config
-              mountPath: /app/config/widgets.yaml
-              subPath: widgets.yaml
+            - name: homepage-config-writable
+              mountPath: /app/config
       volumes:
         - name: homepage-config
           configMap:
             name: homepage-config
+        - name: homepage-config-writable
+          emptyDir: {}
