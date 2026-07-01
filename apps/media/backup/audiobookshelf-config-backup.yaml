@@ -8,7 +8,7 @@ spec:
     schedule: "0 3 * * *"
   restic:
     pruneIntervalDays: 7
-    repository: audiobookshelf-config-volsync-secret
+    repository: audiobookshelf-config-volsync
     retain:
       daily: 7
       weekly: 4

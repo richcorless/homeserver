@@ -170,8 +170,8 @@ EOF
 # Map of: secret-name -> subfolder-within-backup-share
 # Format: "secret_name:subpath"
 declare -A APP_REPOS
-APP_REPOS["audiobookshelf-config-volsync-secret"]="audiobookshelf-config"
-APP_REPOS["lyrion-config-volsync-secret"]="lyrion-config"
+APP_REPOS["audiobookshelf-config-volsync"]="audiobookshelf-config"
+APP_REPOS["lyrion-config-volsync"]="lyrion-config"
 
 # Build the rclone remote path prefix (share + optional subpath)
 if [[ -n "${SMB_SUBPATH}" && "${SMB_SUBPATH}" != "${SMB_SHARE}" ]]; then

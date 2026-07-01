@@ -116,7 +116,7 @@ spec:
     schedule: "0 3 * * *"
   restic:
     pruneIntervalDays: 7
-    repository: <app>-config-volsync-secret
+    repository: <app>-config-volsync
     retain:
       daily: 7
       weekly: 4
@@ -137,7 +137,7 @@ resources:
 Find the `APP_REPOS` map near the bottom of the script and add an entry:
 
 ```bash
-APP_REPOS["<app>-config-volsync-secret"]="<app>-config"
+APP_REPOS["<app>-config-volsync"]="<app>-config"
 ```
 
 ### 3. Create the secret on the cluster
@@ -390,7 +390,7 @@ kubectl logs -n volsync-system -l app.kubernetes.io/name=volsync
 If a backup fails with authentication errors, recreate the secret:
 
 ```bash
-kubectl delete secret audiobookshelf-config-volsync-secret -n media
+kubectl delete secret audiobookshelf-config-volsync -n media
 echo '<smb-password>' | \
 bash ./scripts/setup-volsync-secrets.sh \
   --smb-username '<smb-username>' \

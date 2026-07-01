@@ -40,8 +40,8 @@ No passwords are stored in this repository.
 |---|---|---|---|
 | `media-smb-credentials` | `media` | `username`, `password` | Mounts SMB media shares |
 | `homepage-secrets` | `media` | `HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY` | Homepage widget API token |
-| `audiobookshelf-config-volsync-secret` | `media` | `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `RCLONE_CONFIG` | Volsync backup of Audiobookshelf config |
-| `lyrion-config-volsync-secret` | `media` | `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `RCLONE_CONFIG` | Volsync backup of Lyrion config |
+| `audiobookshelf-config-volsync` | `media` | `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `RCLONE_CONFIG` | Volsync backup of Audiobookshelf config |
+| `lyrion-config-volsync` | `media` | `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `RCLONE_CONFIG` | Volsync backup of Lyrion config |
 
 All secrets are created by helper scripts during bootstrap. See the sections below.
 

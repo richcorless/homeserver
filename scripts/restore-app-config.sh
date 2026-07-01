@@ -102,7 +102,7 @@ for cmd in kubectl flux; do
   fi
 done
 
-SECRET_NAME="${PVC_NAME}-volsync-secret"
+SECRET_NAME="${PVC_NAME}-volsync"
 DEST_NAME="${PVC_NAME}-restore"
 TRIGGER_VALUE="restore-$(date +%s)"
 

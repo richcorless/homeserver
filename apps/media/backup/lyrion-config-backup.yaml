@@ -8,7 +8,7 @@ spec:
     schedule: "0 3 * * *"
   restic:
     pruneIntervalDays: 7
-    repository: lyrion-config-volsync-secret
+    repository: lyrion-config-volsync
     retain:
       daily: 7
       weekly: 4
