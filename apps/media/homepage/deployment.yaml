@@ -12,10 +12,8 @@ spec:
       labels:
         app: homepage
     spec:
-<<<<<<< HEAD
       nodeSelector:
         homeserver.richcorless.io/node-tier: trusted
-=======
       serviceAccountName: homepage
       initContainers:
         - name: copy-config
@@ -26,7 +24,6 @@ spec:
               mountPath: /config-readonly
             - name: homepage-config-writable
               mountPath: /app/config
->>>>>>> origin/main
       containers:
         - name: homepage
           image: ghcr.io/gethomepage/homepage:v1.13.2
