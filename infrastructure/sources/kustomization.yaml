@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - helmrepository-bjw-s.yaml
   - helmrepository-smb-csi.yaml
+  - helmrepository-volsync.yaml

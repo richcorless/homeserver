@@ -8,3 +8,4 @@ resources:
   - audiobookshelf
   - lyrion
   - ingress.yaml
+  - backup
