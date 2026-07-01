@@ -6,7 +6,7 @@ metadata:
 spec:
   valuesContent: |-
     image:
-      tag: v3.7.6
+      tag: v3.7.4
     ports:
       web:
         forwardedHeaders:
