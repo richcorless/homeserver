@@ -5,6 +5,9 @@ metadata:
   namespace: kube-system
 spec:
   valuesContent: |-
+    providers:
+      kubernetesIngress:
+        allowExternalNameServices: true
     ports:
       web:
         forwardedHeaders:
