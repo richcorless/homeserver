@@ -35,8 +35,6 @@ spec:
                   name: homepage-secrets
                   key: HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY
                   optional: true
-            - name: LOG_LEVEL
-              value: debug
           readinessProbe:
             httpGet:
               path: /api/healthcheck

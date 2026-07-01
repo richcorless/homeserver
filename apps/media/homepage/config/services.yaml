@@ -3,10 +3,10 @@
         icon: audiobookshelf.png
         href: /audiobookshelf
         description: Audiobooks and podcasts
-        siteMonitor: http://audiobookshelf.media.svc.cluster.local/audiobookshelf
+        siteMonitor: http://audiobookshelf.media.svc.cluster.local
         widget:
           type: audiobookshelf
-          url: http://audiobookshelf.media.svc.cluster.local/audiobookshelf
+          url: http://audiobookshelf.media.svc.cluster.local
           key: "{{HOMEPAGE_VAR_AUDIOBOOKSHELF_API_KEY}}"
           fields: ["books", "podcasts"]
     - Lyrion Music Server:
