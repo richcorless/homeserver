@@ -27,9 +27,9 @@ spec:
       main:
         controller: main
         ports:
-          #http:
-          #  port: 9000
-          #  targetPort: 9000
+          http:
+            port: 9000
+            targetPort: 9000
           slimproto:
             port: 3483
             targetPort: 3483
