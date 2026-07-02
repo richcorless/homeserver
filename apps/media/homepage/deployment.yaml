@@ -12,6 +12,8 @@ spec:
       labels:
         app: homepage
     spec:
+      nodeSelector:
+        homeserver.richcorless.io/node-tier: trusted
       serviceAccountName: homepage
       initContainers:
         - name: copy-config
